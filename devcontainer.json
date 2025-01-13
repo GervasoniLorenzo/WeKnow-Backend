@@ -1,0 +1,6 @@
+{
+    "name": "WeKnow",
+    "image": "golang:1.20",
+    "workspaceFolder": "/app",
+    "postCreateCommand": "go mod download"
+}

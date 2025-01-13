@@ -1,0 +1,24 @@
+{
+    "app": {
+        "port": 8080,
+        "host": "127.0.0.1"
+    },
+    "database": {
+        "host": "db",
+        "user": "knowed-user",
+        "password": "ifuknowuknow",
+        "name": "weKnow",
+        "port": 5432
+    },
+    "email": {
+        "password":"ifuknowuknow",
+        "username":"known-user",
+        "smtpHost":"maildev",
+        "smtpPort":"1025"
+    },
+    "maildev": {
+        "host": "maildev",
+        "port": 1025
+    }
+    
+}
