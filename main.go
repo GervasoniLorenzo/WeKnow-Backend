@@ -7,7 +7,6 @@ import (
 	"weKnow/config"
 	"weKnow/controller"
 	"weKnow/db"
-	"weKnow/job"
 	"weKnow/middleware"
 	"weKnow/repository"
 	"weKnow/router"
@@ -23,13 +22,13 @@ func main() {
 	repo := repository.NewRepository(db.NewDataBase(config))
 	s := service.NewService(repo)
 	ctrl := controller.NewController(s)
-	j := job.NewJob(s)
-	err = j.ScheduleJobs()
-	if err != nil {
-		fmt.Println("Error scheduling job:", err)
-		return
-	}
-	j.StartScheduler()
+	// j := job.NewJob(s)
+	// err = j.ScheduleJobs()
+	// if err != nil {
+	// 	fmt.Println("Error scheduling job:", err)
+	// 	return
+	// }
+	// j.StartScheduler()
 	r := router.SetupRouter(ctrl)
 	mr := middleware.CorsAndLoggingMiddleware(r)
 	fmt.Println("Started on port", config.App.Port)

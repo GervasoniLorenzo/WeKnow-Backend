@@ -9,3 +9,4 @@ type KnownUtils struct {
 func NewUtils(service *service.KnownService) *KnownUtils {
 	return &KnownUtils{service: service}
 }
+

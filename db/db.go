@@ -61,9 +61,12 @@ func (db *KnownDatabase) AddArtist(artist model.Artist) error {
 	return db.Create(&artist).Error
 }
 
-func (db *KnownDatabase) GetEvents() ([]model.Event, error) {
-	var events []model.Event
-	return events, db.Preload("Artists").Find(&events).Error
+func (db *KnownDatabase) GetNextEvent() (model.Event, error) {
+	var event model.Event
+	return event, db.
+		Preload("Artists").
+		Preload("EventImage", "type = 'flyer'").
+		Where("date >= now()").Order("date ASC").First(&event).Error
 }
 
 func (db *KnownDatabase) AddEvent(event model.Event, artists []model.Artist) error {
@@ -101,4 +104,57 @@ func (db *KnownDatabase) GetArtistEvents(slug string) ([]model.Event, error) {
 		Where("artist.slug = ?", slug).
 		Order("date ASC").
 		Find(&events).Error
+}
+
+func (db *KnownDatabase) GetPastEvents() ([]model.Event, error) {
+	var events []model.Event
+	return events, db.
+		Preload("Artists").
+		Preload("EventImage", "type = 'preview'").
+		Order("date ASC").
+		Where("date < now()").
+		Find(&events).
+		Error
+}
+
+func (db *KnownDatabase) GetUpComingEvents() ([]model.Event, error) {
+	var events []model.Event
+	return events, db.
+		Preload("Artists").
+		Preload("EventImage", "type = 'preview'").
+		Order("date ASC").
+		Where("date >= now()").
+		Offset(1).
+		Find(&events).
+		Error
+}
+
+func (db *KnownDatabase) GetReleases() ([]model.Release, error) {
+	var releases []model.Release
+	err := db.
+		Preload("Artist").
+		Preload("Links").
+		Where("release_date <= now()").
+		Order("release_date DESC").
+		Limit(9).
+		Find(&releases).
+		Error
+	if err != nil {
+		return nil, err
+	}
+	return releases, nil
+}
+
+func (db *KnownDatabase) GetArtistDetailsBySlug(artistSlug string) (model.Artist, error) {
+	var artist model.Artist
+	err := db.
+		Preload("Events", func(db *gorm.DB) *gorm.DB {
+			return db.Order("date ASC")
+		}).
+		Preload("Releases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("release_date DESC")
+		}).
+		Where("slug = ?", artistSlug).
+		First(&artist).Error
+	return artist, err
 }
