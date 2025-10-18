@@ -7,17 +7,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"weKnow/adapter"
+	"weKnow/repository"
 
 	"github.com/google/uuid"
 )
 
 type ImageService struct {
-	adapter *adapter.KnownAdapter
+	ir repository.ImageRepositoryInterface
 }
 
-func NewImageService() *ImageService {
-	return &ImageService{}
+type ImageServiceInterface interface {
+	CreateImage(handler *multipart.FileHeader, file multipart.File) (string, error)
+	GetEventImage(slug string, Imagetype string) (string, string, error)
+	GetArtistsImage(id string, Imagetype string) (string, string, error)
+	GetReleaseImage(id string, Imagetype string) (string, string, error)
+}
+
+func NewImageService(img repository.ImageRepositoryInterface) ImageServiceInterface {
+	return &ImageService{ir: img}
 }
 
 func (s *ImageService) CreateImage(handler *multipart.FileHeader, file multipart.File) (string, error) {
@@ -37,7 +44,7 @@ func (s *ImageService) CreateImage(handler *multipart.FileHeader, file multipart
 
 	filePath := filepath.Join(uploadDir, uniqueFileName)
 
-	err := s.adapter.WriteFile(filePath, file)
+	err := s.ir.WriteFile(filePath, file)
 	fmt.Println(filePath)
 	if err != nil {
 		return "", err
@@ -46,15 +53,15 @@ func (s *ImageService) CreateImage(handler *multipart.FileHeader, file multipart
 	return uuID, nil
 }
 
-func (s *ImageService) GetEventImage(id string, Imagetype string) (string, string, error) {
+func (s *ImageService) GetEventImage(slug string, Imagetype string) (string, string, error) {
 
-	return s.adapter.GetImageByIdDimensionAndType(id, "event", Imagetype)
+	return s.ir.GetImageBySlugDimensionAndType(slug, "event", Imagetype)
 }
 func (s *ImageService) GetArtistsImage(id string, Imagetype string) (string, string, error) {
 
-	return s.adapter.GetImageByIdDimensionAndType(id, "artist", Imagetype)
+	return s.ir.GetImageBySlugDimensionAndType(id, "artist", Imagetype)
 }
 func (s *ImageService) GetReleaseImage(id string, Imagetype string) (string, string, error) {
 
-	return s.adapter.GetImageByIdDimensionAndType(id, "release", Imagetype)
+	return s.ir.GetImageBySlugDimensionAndType(id, "release", Imagetype)
 }

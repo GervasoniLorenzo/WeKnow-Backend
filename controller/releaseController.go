@@ -7,10 +7,14 @@ import (
 )
 
 type ReleaseController struct {
-	srv *service.ReleaseService
+	srv service.ReleaseServiceInterface
 }
 
-func NewReleaseController(service *service.ReleaseService) *ReleaseController {
+type ReleaseControllerInterface interface {
+	GetReleases(w http.ResponseWriter, r *http.Request)
+}
+
+func NewReleaseController(service service.ReleaseServiceInterface) ReleaseControllerInterface {
 	return &ReleaseController{
 		srv: service,
 	}

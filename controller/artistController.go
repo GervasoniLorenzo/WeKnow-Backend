@@ -8,16 +8,17 @@ import (
 )
 
 type ArtistController struct {
-	service *service.ArtistService
+	service service.ArtistServiceInterface
 }
 
 type ArtistControllerInterface interface {
 	GetArtists(w http.ResponseWriter, r *http.Request)
-	AddArtist(w http.ResponseWriter, r *http.Request)
+	CreateArtist(w http.ResponseWriter, r *http.Request)
 	GetArtistImage(w http.ResponseWriter, r *http.Request)
+	GetArtistDetails(w http.ResponseWriter, r *http.Request)
 }
 
-func NewArtistController(service *service.ArtistService) *ArtistController {
+func NewArtistController(service service.ArtistServiceInterface) ArtistControllerInterface {
 	return &ArtistController{
 		service: service,
 	}

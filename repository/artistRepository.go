@@ -7,12 +7,24 @@ import (
 )
 
 type ArtistRepository struct {
-	dataBase *db.KnownDatabase
-	adapter  *adapter.KnownAdapter
+	dataBase db.DatabaseInterface
+	adapter  adapter.AdapterInterface
 }
 
-func NewArtistRepository() *ArtistRepository {
-	return &ArtistRepository{}
+type ArtistRepositoryInterface interface {
+	CreateArtist(artist model.Artist) error
+	GetArtistsByIds(artistIds []int) ([]model.Artist, error)
+	GetArtistUuidBySlug(slug string) string
+	GetArtists() []model.Artist
+	GetArtistImage(uuid string) (string, string, error)
+	GetArtistDetailsBySlug(artistSlug string) (model.Artist, error)
+}
+
+func NewArtistRepository(db db.DatabaseInterface, a adapter.AdapterInterface) ArtistRepositoryInterface {
+	return &ArtistRepository{
+		dataBase: db,
+		adapter:  a,
+	}
 }
 
 func (r *ArtistRepository) CreateArtist(artist model.Artist) error {

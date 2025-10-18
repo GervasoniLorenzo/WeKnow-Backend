@@ -13,22 +13,29 @@ import (
 
 type EventControllerInterface interface {
 	GetNextEvent(w http.ResponseWriter, r *http.Request)
-	CreateEvent(w http.ResponseWriter, r *http.Request)
 	SendEventEmail(w http.ResponseWriter, r *http.Request)
+	AdminGetEventList(w http.ResponseWriter, r *http.Request)
+	AdminDeleteEvent(w http.ResponseWriter, r *http.Request)
+	AdminUpdateEvent(w http.ResponseWriter, r *http.Request)
+	AdminCreateEvent(w http.ResponseWriter, r *http.Request)
+	GetPastEvents(w http.ResponseWriter, r *http.Request)
+	GetUpcomingEvents(w http.ResponseWriter, r *http.Request)
+	GetArtistEvents(w http.ResponseWriter, r *http.Request)
 }
 
 type EventController struct {
-	srv *service.EventService
+	srv service.EventServiceInterface
 }
 
-func NewEventController(service *service.EventService) *EventController {
+func NewEventController(service service.EventServiceInterface) EventControllerInterface {
 	return &EventController{
 		srv: service,
 	}
 }
 
 func (ctrl *EventController) GetNextEvent(w http.ResponseWriter, r *http.Request) {
-	event, err := ctrl.srv.GetNextEvent()
+	view := r.URL.Query().Get("view")
+	event, err := ctrl.srv.GetNextEvent(view)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -57,6 +64,8 @@ func (ctrl *EventController) GetPastEvents(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	jsonData, err := json.Marshal(event)
@@ -74,8 +83,9 @@ func (ctrl *EventController) GetUpcomingEvents(w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
 	jsonData, err := json.Marshal(event)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -83,24 +93,6 @@ func (ctrl *EventController) GetUpcomingEvents(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Write(jsonData)
-}
-func (ctrl *EventController) CreateEvent(w http.ResponseWriter, r *http.Request) {
-
-	event := new(model.EventDto)
-
-	err := json.NewDecoder(r.Body).Decode(&event)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = ctrl.srv.AddEvent(*event)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (ctrl *EventController) SendEventEmail(w http.ResponseWriter, r *http.Request) {
@@ -151,4 +143,84 @@ func (ctrl *EventController) GetArtistEvents(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Write(jsonData)
+}
+
+func (ctrl *EventController) AdminGetEventList(w http.ResponseWriter, r *http.Request) {
+	events, err := ctrl.srv.AdminGetEventList()
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	jsonData, err := json.Marshal(events)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+}
+
+func (ctrl *EventController) AdminDeleteEvent(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/admin/event/"):]
+
+	if id == "" {
+		http.Error(w, "ID event non fornito", http.StatusBadRequest)
+		return
+	}
+	eventId, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = ctrl.srv.AdminDeleteEvent(eventId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (ctrl *EventController) AdminUpdateEvent(w http.ResponseWriter, r *http.Request) {
+
+	event := new(model.UpdateEventDto)
+
+	err := json.NewDecoder(r.Body).Decode(&event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = ctrl.srv.AdminUpdateEvent(*event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (ctrl *EventController) AdminCreateEvent(w http.ResponseWriter, r *http.Request) {
+
+	event := new(model.EventDto)
+
+	err := json.NewDecoder(r.Body).Decode(&event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = ctrl.srv.AdminCreateEvent(*event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

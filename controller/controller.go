@@ -5,17 +5,24 @@ import (
 )
 
 type KnownController struct {
-	*EventController
-	*ArtistController
-	*ImageController
-	*ReleaseController
+	EventControllerInterface
+	ArtistControllerInterface
+	ImageControllerInterface
+	ReleaseControllerInterface
 }
 
-func NewController(service *service.KnownService) *KnownController {
-	return &KnownController{
-		EventController:   NewEventController(service.EventService),
-		ArtistController:  NewArtistController(service.ArtistService),
-		ImageController:   NewImageController(service.ImageService),
-		ReleaseController: NewReleaseController(service.ReleaseService),
+type ControllerInterface interface {
+	EventControllerInterface
+	ArtistControllerInterface
+	ImageControllerInterface
+	ReleaseControllerInterface
+}
+
+func NewController(service service.KnownService) ControllerInterface {
+	return KnownController{
+		EventControllerInterface:   NewEventController(service.EventServiceInterface),
+		ArtistControllerInterface:  NewArtistController(service.ArtistServiceInterface),
+		ImageControllerInterface:   NewImageController(service.ImageServiceInterface),
+		ReleaseControllerInterface: NewReleaseController(service.ReleaseServiceInterface),
 	}
 }

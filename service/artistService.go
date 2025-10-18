@@ -6,16 +6,17 @@ import (
 )
 
 type ArtistServiceInterface interface {
-	GetArtists() []model.Artist
+	GetArtists() []model.ArtistBasicInfo
 	AddArtist(artist model.Artist) error
 	GetArtistImage(slug string) (string, string, error)
+	GetArtistDetails(artistSlug string) (model.Artist, error)
 }
 
 type ArtistService struct {
-	repo *repository.ArtistRepository
+	repo repository.ArtistRepositoryInterface
 }
 
-func NewArtistService(repo *repository.ArtistRepository) *ArtistService {
+func NewArtistService(repo repository.ArtistRepositoryInterface) ArtistServiceInterface {
 	return &ArtistService{
 		repo: repo,
 	}

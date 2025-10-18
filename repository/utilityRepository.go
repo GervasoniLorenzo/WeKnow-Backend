@@ -7,14 +7,14 @@ import (
 )
 
 type UtilityRepositoryInterface interface {
-	GetContacts()
+	GetContacts() []model.Contact
 }
 type UtilityRepository struct {
-	dataBase *db.KnownDatabase
-	adapter  *adapter.KnownAdapter
+	dataBase db.DatabaseInterface
+	adapter  adapter.AdapterInterface
 }
 
-func NewUtilityRepository(db *db.KnownDatabase) *UtilityRepository {
+func NewUtilityRepository(db db.DatabaseInterface) UtilityRepositoryInterface {
 	return &UtilityRepository{
 		dataBase: db,
 		adapter:  adapter.NewAdapter(),

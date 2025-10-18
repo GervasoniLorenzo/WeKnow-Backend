@@ -9,10 +9,10 @@ type ReleaseServiceInterface interface {
 	GetReleases() ([]model.Release, error)
 }
 type ReleaseService struct {
-	repo *repository.ReleaseRepository
+	repo repository.ReleaseRepositoryInterface
 }
 
-func NewReleaseService(repo *repository.ReleaseRepository) *ReleaseService {
+func NewReleaseService(repo repository.ReleaseRepositoryInterface) ReleaseServiceInterface {
 	return &ReleaseService{
 		repo: repo,
 	}

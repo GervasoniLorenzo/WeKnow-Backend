@@ -1,26 +1,29 @@
 package service
 
 import (
-	"mime/multipart"
+	"weKnow/config"
 	"weKnow/repository"
 )
 
 type KnownService struct {
-	*ArtistService
-	*EventService
-	*ImageService
-	*ReleaseService
+	ArtistServiceInterface
+	EventServiceInterface
+	ImageServiceInterface
+	ReleaseServiceInterface
 }
 
-func NewService(repo *repository.KnownRepository) *KnownService {
-	return &KnownService{
-		ArtistService:  NewArtistService(repo.ArtistRepository),
-		EventService:   NewEventService(repo.EventRepository, repo.ArtistRepository, repo.UtilityRepository),
-		ImageService:   NewImageService(),
-		ReleaseService: NewReleaseService(repo.ReleaseRepository),
+type ServiceInterface interface {
+	ArtistServiceInterface
+	EventServiceInterface
+	ImageServiceInterface
+	ReleaseServiceInterface
+}
+
+func NewService(repo repository.KnownRepository, conf config.KnownConfig) ServiceInterface {
+	return KnownService{
+		ArtistServiceInterface:  NewArtistService(repo.ArtistRepositoryInterface),
+		EventServiceInterface:   NewEventService(repo.EventRepositoryInterface, repo.ArtistRepositoryInterface, repo.UtilityRepositoryInterface, conf),
+		ImageServiceInterface:   NewImageService(repo.ImageRepositoryInterface),
+		ReleaseServiceInterface: NewReleaseService(repo.ReleaseRepositoryInterface),
 	}
-}
-
-type ImageServiceInterface interface {
-	CreateImage(handler *multipart.FileHeader, file multipart.File) (string, error)
 }

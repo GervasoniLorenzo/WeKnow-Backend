@@ -8,10 +8,16 @@ import (
 )
 
 type ImageController struct {
-	srv *service.ImageService
+	srv service.ImageServiceInterface
+}
+type ImageControllerInterface interface {
+	UploadImage(w http.ResponseWriter, r *http.Request)
+	GetEventImage(w http.ResponseWriter, r *http.Request)
+	// GetArtistImage(w http.ResponseWriter, r *http.Request)
+	GetReleaseImage(w http.ResponseWriter, r *http.Request)
 }
 
-func NewImageController(service *service.ImageService) *ImageController {
+func NewImageController(service service.ImageServiceInterface) ImageControllerInterface {
 	return &ImageController{
 		srv: service,
 	}
@@ -49,15 +55,14 @@ func (ctrl *ImageController) UploadImage(w http.ResponseWriter, r *http.Request)
 }
 
 func (ctrl *ImageController) GetEventImage(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
-	eventType := r.URL.Query().Get("type")
-
-	if id == "" || eventType == "" {
+	slug := r.URL.Path[len("/event/image/"):]
+	if slug == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	imageSize := r.URL.Query().Get("size")
 
-	img, mimetype, err := ctrl.srv.GetEventImage(id, eventType)
+	img, mimetype, err := ctrl.srv.GetEventImage(slug, imageSize)
 
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

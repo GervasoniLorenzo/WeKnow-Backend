@@ -65,37 +65,36 @@ func (a *KnownAdapter) WriteFile(filePath string, file multipart.File) error {
 	return nil
 }
 
-func (a *KnownAdapter) GetImageByIdDimensionAndType(entityId string, ImageType string, dimension string) (string, string, error) {
-    extensions := []string{".png", ".jpg", ".jpeg"}
-    var path string
-    var file *os.File
-    var err error
+func (a *KnownAdapter) GetImageBySlugDimensionAndType(entityId string, ImageType string, dimension string) (string, string, error) {
+	extensions := []string{".png", ".jpg", ".jpeg"}
+	var path string
+	var file *os.File
+	var err error
 
-    for _, ext := range extensions {
-        path = fmt.Sprintf("./images/%s/%s/%s%s", ImageType, dimension, entityId, ext)
-        file, err = os.Open(path)
-        if err == nil {
-            break 
-        }
-    }
+	for _, ext := range extensions {
+		path = fmt.Sprintf("./images/%s/%s/%s%s", ImageType, dimension, entityId, ext)
+		file, err = os.Open(path)
+		if err == nil {
+			break
+		}
+	}
 
-    if err != nil {
-        fmt.Println("Errore nell'apertura del file immagine:", err)
-        return "", "", fmt.Errorf("image not found for entityId %s with type %s and dimension %s", entityId, ImageType, dimension)
-    }
-    defer file.Close()
+	if err != nil {
+		fmt.Println("Errore nell'apertura del file immagine:", err)
+		return "", "", fmt.Errorf("image not found for entityId %s with type %s and dimension %s", entityId, ImageType, dimension)
+	}
+	defer file.Close()
 
-    var mimeType string
-    switch filepath.Ext(path) {
-    case ".jpg", ".jpeg":
-        mimeType = "image/jpeg"
-    case ".png":
-        mimeType = "image/png"
-    default:
-        fmt.Println("Formato immagine non supportato:", filepath.Ext(path))
-        return "", "", fmt.Errorf("unsupported image format: %s", filepath.Ext(path))
-    }
+	var mimeType string
+	switch filepath.Ext(path) {
+	case ".jpg", ".jpeg":
+		mimeType = "image/jpeg"
+	case ".png":
+		mimeType = "image/png"
+	default:
+		fmt.Println("Formato immagine non supportato:", filepath.Ext(path))
+		return "", "", fmt.Errorf("unsupported image format: %s", filepath.Ext(path))
+	}
 
-    return path, mimeType, nil
+	return path, mimeType, nil
 }
-

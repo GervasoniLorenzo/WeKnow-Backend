@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"weKnow/adapter"
 	"weKnow/config"
 	"weKnow/controller"
 	"weKnow/db"
@@ -19,9 +20,9 @@ func main() {
 		fmt.Println("Error loading config:", err)
 		return
 	}
-	repo := repository.NewRepository(db.NewDataBase(config))
-	s := service.NewService(repo)
-	ctrl := controller.NewController(s)
+	repo := repository.NewRepository(db.NewDataBase(config), adapter.NewAdapter())
+	s := service.NewService(repo.(repository.KnownRepository), *config)
+	ctrl := controller.NewController(s.(service.KnownService))
 	// j := job.NewJob(s)
 	// err = j.ScheduleJobs()
 	// if err != nil {
@@ -29,7 +30,7 @@ func main() {
 	// 	return
 	// }
 	// j.StartScheduler()
-	r := router.SetupRouter(ctrl)
+	r := router.SetupRouter(ctrl.(controller.KnownController))
 	mr := middleware.CorsAndLoggingMiddleware(r)
 	fmt.Println("Started on port", config.App.Port)
 	if err := http.ListenAndServe(":"+fmt.Sprint(config.App.Port), mr); err != nil {

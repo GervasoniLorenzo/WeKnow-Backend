@@ -6,19 +6,30 @@ import (
 	"weKnow/model"
 )
 
+type EventRepository struct {
+	dataBase db.DatabaseInterface
+	adapter  adapter.AdapterInterface
+}
+
 type EventRepositoryInterface interface {
 	GetNextEvent() (model.Event, error)
 	GetPastEvents() ([]model.Event, error)
 	GetUpComingEvents() ([]model.Event, error)
 	GetEventById(id int) (model.Event, error)
-	GetNext3Events() ([]model.Event, error)
 	GetArtistEvents(slug string) ([]model.Event, error)
-	AddEvent(event model.Event, artists []model.Artist) error
+	// ADMIN
+	AdminAddEvent(event model.Event) error
+	AdminGetEventList() ([]model.Event, error)
+	AdminDeleteEvent(id int) error
+	AdminUpdateEvent(event model.Event) error
+	CheckSlugExists(slug string) (bool, error)
 }
 
-type EventRepository struct {
-	dataBase *db.KnownDatabase
-	adapter  *adapter.KnownAdapter
+func NewEventRepository(db db.DatabaseInterface, adapter adapter.AdapterInterface) EventRepositoryInterface {
+	return &EventRepository{
+		dataBase: db,
+		adapter:  adapter,
+	}
 }
 
 func (r *EventRepository) GetNextEvent() (model.Event, error) {
@@ -37,6 +48,25 @@ func (r *EventRepository) GetEventById(id int) (model.Event, error) {
 func (r *EventRepository) GetArtistEvents(slug string) ([]model.Event, error) {
 	return r.dataBase.GetArtistEvents(slug)
 }
-func (r *EventRepository) AddEvent(event model.Event, artists []model.Artist) error {
-	return r.dataBase.AddEvent(event, artists)
+func (r *EventRepository) AddEvent(event model.Event) error {
+	return r.dataBase.AddEvent(event)
+}
+func (r *EventRepository) AdminGetEventList() ([]model.Event, error) {
+	return r.dataBase.AdminGetEventList()
+}
+
+func (r *EventRepository) AdminAddEvent(event model.Event) error {
+	return r.dataBase.AddEvent(event)
+}
+
+func (r *EventRepository) AdminDeleteEvent(id int) error {
+	return r.dataBase.DeleteEvent(id)
+}
+
+func (r *EventRepository) AdminUpdateEvent(event model.Event) error {
+	return r.dataBase.UpdateEvent(event)
+}
+
+func (r *EventRepository) CheckSlugExists(slug string) (bool, error) {
+	return r.dataBase.EventSlugAlreadyExist(slug)
 }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 
 	"weKnow/config"
@@ -14,7 +15,34 @@ type KnownDatabase struct {
 	*gorm.DB
 }
 
-func NewDataBase(config *config.KnownConfig) *KnownDatabase {
+type DatabaseInterface interface {
+	GetJobs() []model.Job
+	GetContacts() []model.Contact
+
+	//Artists
+	GetArtists() []model.Artist
+	GetArtistUuidBySlug(slug string) string
+	AddArtist(artist model.Artist) error
+	GetArtistsByIds(artistIds []int) ([]model.Artist, error)
+	GetArtistEvents(slug string) ([]model.Event, error)
+	GetArtistDetailsBySlug(slug string) (model.Artist, error)
+
+	//Events
+	GetNextEvent() (model.Event, error)
+	AddEvent(event model.Event) error
+	GetEventById(id int) (model.Event, error)
+	GetNext3Events() ([]model.Event, error)
+	GetPastEvents() ([]model.Event, error)
+	GetUpComingEvents() ([]model.Event, error)
+	AdminGetEventList() ([]model.Event, error)
+	DeleteEvent(id int) error
+	UpdateEvent(event model.Event) error
+	EventSlugAlreadyExist(slug string) (bool, error)
+
+	GetReleases() ([]model.Release, error)
+}
+
+func NewDataBase(config *config.KnownConfig) DatabaseInterface {
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d",
 		config.Database.Host,
@@ -26,6 +54,13 @@ func NewDataBase(config *config.KnownConfig) *KnownDatabase {
 	gormDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database: %w", err))
+	}
+
+	if err := gormDB.AutoMigrate(&model.Event{}, &model.Artist{}, &model.EventArtist{}); err != nil {
+		panic(fmt.Errorf("failed to migrate database: %w", err))
+	}
+	if err = gormDB.SetupJoinTable(&model.Event{}, "Artists", &model.EventArtist{}); err != nil {
+		panic(fmt.Errorf("failed to setup join table: %w", err))
 	}
 
 	return &KnownDatabase{
@@ -65,18 +100,17 @@ func (db *KnownDatabase) GetNextEvent() (model.Event, error) {
 	var event model.Event
 	return event, db.
 		Preload("Artists").
-		Preload("EventImage", "type = 'flyer'").
 		Where("date >= now()").Order("date ASC").First(&event).Error
 }
 
-func (db *KnownDatabase) AddEvent(event model.Event, artists []model.Artist) error {
+func (db *KnownDatabase) AddEvent(event model.Event) error {
 	err := db.Create(&event).Error
 	if err != nil {
 		return err
 	}
-	if err := db.Model(&event).Association("Artists").Append(artists); err != nil {
-		return err
-	}
+	// if err := db.Model(&event).Association("Artists").Append(artists); err != nil {
+	// 	return err
+	// }
 	return nil
 }
 
@@ -110,7 +144,6 @@ func (db *KnownDatabase) GetPastEvents() ([]model.Event, error) {
 	var events []model.Event
 	return events, db.
 		Preload("Artists").
-		Preload("EventImage", "type = 'preview'").
 		Order("date ASC").
 		Where("date < now()").
 		Find(&events).
@@ -121,7 +154,6 @@ func (db *KnownDatabase) GetUpComingEvents() ([]model.Event, error) {
 	var events []model.Event
 	return events, db.
 		Preload("Artists").
-		Preload("EventImage", "type = 'preview'").
 		Order("date ASC").
 		Where("date >= now()").
 		Offset(1).
@@ -145,7 +177,7 @@ func (db *KnownDatabase) GetReleases() ([]model.Release, error) {
 	return releases, nil
 }
 
-func (db *KnownDatabase) GetArtistDetailsBySlug(artistSlug string) (model.Artist, error) {
+func (db *KnownDatabase) GetArtistDetailsBySlug(slug string) (model.Artist, error) {
 	var artist model.Artist
 	err := db.
 		Preload("Events", func(db *gorm.DB) *gorm.DB {
@@ -154,7 +186,72 @@ func (db *KnownDatabase) GetArtistDetailsBySlug(artistSlug string) (model.Artist
 		Preload("Releases", func(db *gorm.DB) *gorm.DB {
 			return db.Order("release_date DESC")
 		}).
-		Where("slug = ?", artistSlug).
+		Where("slug = ?", slug).
 		First(&artist).Error
 	return artist, err
+}
+
+func (db *KnownDatabase) AdminGetEventList() ([]model.Event, error) {
+	var events []model.Event
+	return events, db.
+		Preload("Artists").
+		Where("date >= now()").
+		Order("date DESC").
+		Find(&events).
+		Error
+}
+
+func (db *KnownDatabase) DeleteEvent(id int) error {
+	return db.Delete(&model.Event{}, id).Error
+}
+
+func (db *KnownDatabase) UpdateEvent(event model.Event) error {
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if rec := recover(); rec != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var persisted model.Event
+	if err := tx.First(&persisted, "id = ?", event.Id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&persisted).
+		Omit("Artists", "Artists.*").
+		Updates(map[string]any{
+			"name":     event.Name,
+			"location": event.Location,
+			"date":     event.Date, // *time.Time ok
+		}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&persisted).Association("Artists").Replace(event.Artists); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}
+
+func (db *KnownDatabase) EventSlugAlreadyExist(slug string) (bool, error) {
+	var exist int
+	err := db.
+		Model(&model.Event{}).
+		Select("count(id)").
+		Where("slug = ?", slug).
+		Scan(&exist).
+		Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	return exist > 0, nil
 }

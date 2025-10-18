@@ -2,39 +2,49 @@ package service
 
 import (
 	"fmt"
+	"weKnow/config"
 	"weKnow/model"
 	"weKnow/repository"
+	"weKnow/utils"
 )
 
 type EventServiceInterface interface {
-	GetNextEvent() ([]model.Event, error)
-	GetPastEvents() ([]model.Event, error)
-	GetUpcomingEvents() ([]model.Event, error)
+	GetNextEvent(view string) (model.EventResponseDto, error)
+	GetPastEvents() ([]model.EventResponseDto, error)
+	GetUpcomingEvents() ([]model.EventResponseDto, error)
 	SendEventEmail(id int) error
 	GetArtistEvents(slug string) ([]model.Event, error)
+	AdminGetEventList() ([]model.Event, error)
+	AdminDeleteEvent(id int) error
+	AdminUpdateEvent(event model.UpdateEventDto) error
+	AdminCreateEvent(event model.EventDto) error
 }
 
 type EventService struct {
-	eventRepo   *repository.EventRepository
-	artistRepo  *repository.ArtistRepository
-	utilityRepo *repository.UtilityRepository
+	eventRepo   repository.EventRepositoryInterface
+	artistRepo  repository.ArtistRepositoryInterface
+	utilityRepo repository.UtilityRepositoryInterface
+	cfg         config.KnownConfig
+	u           utils.UtilsInterface
 }
 
-func NewEventService(eventRepo *repository.EventRepository, artistRepo *repository.ArtistRepository, utilityRepo *repository.UtilityRepository) *EventService {
+func NewEventService(er repository.EventRepositoryInterface, ar repository.ArtistRepositoryInterface, ur repository.UtilityRepositoryInterface, cfg config.KnownConfig) EventServiceInterface {
 	return &EventService{
-		eventRepo:   eventRepo,
-		artistRepo:  artistRepo,
-		utilityRepo: utilityRepo,
+		eventRepo:   er,
+		artistRepo:  ar,
+		utilityRepo: ur,
+		cfg:         cfg,
+		u:           utils.NewUtils(),
 	}
 }
 
-func (s *EventService) GetNextEvent() (model.EventResponseDto, error) {
+func (s *EventService) GetNextEvent(view string) (model.EventResponseDto, error) {
 
 	ev, err := s.eventRepo.GetNextEvent()
 	if err != nil {
 		return model.EventResponseDto{}, err
 	}
-	return formatEvent(ev), nil
+	return s.formatEvent(ev, ""), nil
 }
 
 func (s *EventService) GetPastEvents() ([]model.EventResponseDto, error) {
@@ -43,7 +53,7 @@ func (s *EventService) GetPastEvents() ([]model.EventResponseDto, error) {
 	if err != nil {
 		return nil, err
 	}
-	return formatEvents(event), nil
+	return s.formatEvents(event), nil
 }
 func (s *EventService) GetUpcomingEvents() ([]model.EventResponseDto, error) {
 
@@ -51,7 +61,7 @@ func (s *EventService) GetUpcomingEvents() ([]model.EventResponseDto, error) {
 	if err != nil {
 		return nil, err
 	}
-	return formatEvents(event), nil
+	return s.formatEvents(event), nil
 }
 func (s *EventService) SendEventEmail(id int) error {
 	event, err := s.eventRepo.GetEventById(id)
@@ -85,41 +95,90 @@ func (s *EventService) GetArtistEvents(slug string) ([]model.Event, error) {
 	return s.eventRepo.GetArtistEvents(slug)
 }
 
-func (s *EventService) AddEvent(event model.EventDto) error {
-	artists, err := s.artistRepo.GetArtistsByIds(event.ArtistsId)
-	if err != nil {
-		return err
-	}
-	eventEntity := model.Event{
-		Name:     event.Name,
-		Location: event.Location,
-		Date:     event.Date,
-	}
-	return s.eventRepo.AddEvent(eventEntity, artists)
+func (s *EventService) AdminGetEventList() ([]model.Event, error) {
+	return s.eventRepo.AdminGetEventList()
 }
 
-func formatEvents(events []model.Event) []model.EventResponseDto {
+func (s *EventService) formatEvents(events []model.Event) []model.EventResponseDto {
 	var formattedEvents []model.EventResponseDto
 	for _, event := range events {
-		formattedEvents = append(formattedEvents, formatEvent(event))
+		formattedEvents = append(formattedEvents, s.formatEvent(event, ""))
 	}
 	return formattedEvents
 }
 
-func formatEvent(e model.Event) model.EventResponseDto {
+func (s *EventService) formatEvent(e model.Event, view string) model.EventResponseDto {
 	day := e.Date.Day()
 	month := model.MONTHS[int(e.Date.Month())-1]
 	year := e.Date.Year()
-	image := ""
-	if len(e.EventImage) > 0 {
-		image = e.EventImage[0].Url
+	size := "flyer"
+	if view == "mobile" {
+		size = "small"
 	}
+	image := fmt.Sprintf("%s/event/image/%s?size=%s", s.cfg.App.Host, e.Slug, size)
 	return model.EventResponseDto{
 		Id:       e.Id,
 		Name:     e.Name,
+		Slug:     e.Slug,
 		Location: e.Location,
 		Date:     fmt.Sprintf("%d %s %d", day, month, year),
 		Artists:  e.Artists,
 		Image:    image,
 	}
+}
+
+func (s *EventService) AdminDeleteEvent(id int) error {
+	return s.eventRepo.AdminDeleteEvent(id)
+}
+
+func (s *EventService) AdminUpdateEvent(event model.UpdateEventDto) error {
+	artists, err := s.artistRepo.GetArtistsByIds(event.ArtistsId)
+	if err != nil {
+		return err
+	}
+
+	eventEntity := model.Event{
+		Id:       event.Id,
+		Name:     event.Name,
+		Location: event.Location,
+		Date:     event.Date,
+		Artists:  artists,
+	}
+
+	return s.eventRepo.AdminUpdateEvent(eventEntity)
+}
+
+func (s *EventService) AdminCreateEvent(event model.EventDto) error {
+	artists, err := s.artistRepo.GetArtistsByIds(event.ArtistsId)
+	if err != nil {
+		return err
+	}
+
+	slug := s.u.GenerateSlug(event.Name)
+	// Assegna il valore di controllo a una variabile, poi ciclaci sopra
+	exists, err := s.eventRepo.CheckSlugExists(slug)
+	if err != nil {
+		return err
+	}
+	count := 0
+	for exists {
+		count++
+		exists, err = s.eventRepo.CheckSlugExists(fmt.Sprintf("%s-$s", slug, count))
+		if err != nil {
+			return err
+		}
+		if exists {
+			slug = fmt.Sprintf("%s-%d", slug, count)
+		}
+	}
+
+	eventEntity := model.Event{
+		Name:     event.Name,
+		Location: event.Location,
+		Date:     event.Date,
+		Artists:  artists,
+		Slug:     slug,
+	}
+
+	return s.eventRepo.AdminAddEvent(eventEntity)
 }

@@ -1,42 +1,33 @@
 package repository
 
 import (
-	"mime/multipart"
+	"weKnow/adapter"
 	"weKnow/db"
-	"weKnow/model"
 )
 
 type KnownRepository struct {
-	*EventRepository
-	*ArtistRepository
-	*UtilityRepository
-	*ReleaseRepository
+	ArtistRepositoryInterface
+	EventRepositoryInterface
+	UtilityRepositoryInterface
+	ReleaseRepositoryInterface
+	ImageRepositoryInterface
 }
 
 type KnownRepositoryInterface interface {
-	GetJobs() []model.Job
-	GetContacts() []model.Contact
-	SendEmail(email model.Email) error
-	SendWhatsApp(recipent string, message string) error
-	GetArtists() []model.Artist
-	GetArtistImage(uuid string) (string, string, error)
-	WriteFile(filePath string, file multipart.File) error
+	ArtistRepositoryInterface
+	EventRepositoryInterface
+	UtilityRepositoryInterface
+	ReleaseRepositoryInterface
+	ImageRepositoryInterface
 }
 
-func NewRepository(db *db.KnownDatabase) *KnownRepository {
-	return &KnownRepository{
-		EventRepository: &EventRepository{
-			dataBase: db,
-		},
-		ArtistRepository: &ArtistRepository{
-			dataBase: db,
-		},
-		ReleaseRepository: &ReleaseRepository{
-			dataBase: db,
-		},
-		UtilityRepository: &UtilityRepository{
-			dataBase: db,
-		},
+func NewRepository(db db.DatabaseInterface, a adapter.AdapterInterface) KnownRepositoryInterface {
+	return KnownRepository{
+		EventRepositoryInterface:   NewEventRepository(db, nil),
+		ArtistRepositoryInterface:  NewArtistRepository(db, a),
+		ReleaseRepositoryInterface: NewReleaseRepository(db),
+		UtilityRepositoryInterface: NewUtilityRepository(db),
+		ImageRepositoryInterface:   NewImageRepository(a),
 	}
 }
 
