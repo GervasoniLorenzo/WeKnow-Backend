@@ -16,7 +16,7 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	r.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	r.HandleFunc("/artist/image/{slug}", ctrl.GetArtistImage).Methods("GET")
 	r.HandleFunc("/artist/{slug}/events", ctrl.GetArtistEvents).Methods("GET")
-	r.HandleFunc("/artist/image", ctrl.UploadImage).Methods("POST")
+	// r.HandleFunc("/artist/image", ctrl.UploadImage).Methods("POST")
 	r.HandleFunc("/artist", ctrl.CreateArtist).Methods("POST")
 	r.HandleFunc("/artist/{slug}", ctrl.GetArtistDetails).Methods("GET")
 
@@ -39,6 +39,7 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	admin.HandleFunc("/event", ctrl.AdminCreateEvent).Methods("POST")
 	admin.HandleFunc("/event/{id}", ctrl.AdminUpdateEvent).Methods("PUT")
 	admin.HandleFunc("/event/{id}", ctrl.AdminDeleteEvent).Methods("DELETE")
+	admin.HandleFunc("/event/image", ctrl.UploadEventImage).Methods("POST")
 
 	admin.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	// admin.HandleFunc("/artist/{slug}", ctrl.UpdateArtist).Methods("PUT")

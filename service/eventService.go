@@ -24,15 +24,17 @@ type EventService struct {
 	eventRepo   repository.EventRepositoryInterface
 	artistRepo  repository.ArtistRepositoryInterface
 	utilityRepo repository.UtilityRepositoryInterface
+	imageRepo   repository.ImageRepositoryInterface
 	cfg         config.KnownConfig
 	u           utils.UtilsInterface
 }
 
-func NewEventService(er repository.EventRepositoryInterface, ar repository.ArtistRepositoryInterface, ur repository.UtilityRepositoryInterface, cfg config.KnownConfig) EventServiceInterface {
+func NewEventService(er repository.EventRepositoryInterface, ar repository.ArtistRepositoryInterface, ur repository.UtilityRepositoryInterface, ir repository.ImageRepositoryInterface, cfg config.KnownConfig) EventServiceInterface {
 	return &EventService{
 		eventRepo:   er,
 		artistRepo:  ar,
 		utilityRepo: ur,
+		imageRepo:   ir,
 		cfg:         cfg,
 		u:           utils.NewUtils(),
 	}
@@ -163,7 +165,7 @@ func (s *EventService) AdminCreateEvent(event model.EventDto) error {
 	count := 0
 	for exists {
 		count++
-		exists, err = s.eventRepo.CheckSlugExists(fmt.Sprintf("%s-$s", slug, count))
+		exists, err = s.eventRepo.CheckSlugExists(fmt.Sprintf("%s-%v", slug, count))
 		if err != nil {
 			return err
 		}
@@ -173,11 +175,12 @@ func (s *EventService) AdminCreateEvent(event model.EventDto) error {
 	}
 
 	eventEntity := model.Event{
-		Name:     event.Name,
-		Location: event.Location,
-		Date:     event.Date,
-		Artists:  artists,
-		Slug:     slug,
+		Name:      event.Name,
+		Location:  event.Location,
+		Date:      event.Date,
+		Artists:   artists,
+		Slug:      slug,
+		ImageUuid: event.ImageUuid,
 	}
 
 	return s.eventRepo.AdminAddEvent(eventEntity)

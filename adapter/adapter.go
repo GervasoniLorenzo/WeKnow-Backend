@@ -15,7 +15,7 @@ type AdapterInterface interface {
 	ServeImage(path string) (string, string, error)
 	CreateImage(image string) (string, string, error)
 	WriteFile(filePath string, file multipart.File) error
-	GetImageBySlugDimensionAndType(entityId string, ImageType string, dimension string) (string, string, error)
+	GetImageBySlugDimensionAndType(entityId string, ImageType string) (string, string, error)
 }
 
 func NewAdapter() AdapterInterface {

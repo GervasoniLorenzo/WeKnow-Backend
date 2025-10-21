@@ -21,8 +21,14 @@ type ServiceInterface interface {
 
 func NewService(repo repository.KnownRepository, conf config.KnownConfig) ServiceInterface {
 	return KnownService{
-		ArtistServiceInterface:  NewArtistService(repo.ArtistRepositoryInterface),
-		EventServiceInterface:   NewEventService(repo.EventRepositoryInterface, repo.ArtistRepositoryInterface, repo.UtilityRepositoryInterface, conf),
+		ArtistServiceInterface: NewArtistService(repo.ArtistRepositoryInterface),
+		EventServiceInterface: NewEventService(
+			repo.EventRepositoryInterface,
+			repo.ArtistRepositoryInterface,
+			repo.UtilityRepositoryInterface,
+			repo.ImageRepositoryInterface,
+			conf,
+		),
 		ImageServiceInterface:   NewImageService(repo.ImageRepositoryInterface),
 		ReleaseServiceInterface: NewReleaseService(repo.ReleaseRepositoryInterface),
 	}

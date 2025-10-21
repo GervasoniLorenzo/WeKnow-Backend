@@ -10,14 +10,13 @@ var MONTHS = []string{
 }
 
 type Event struct {
-	Id       int        `gorm:"column:id" json:"id"`
-	Name     string     `gorm:"column:name" json:"name"`
-	Slug     string     `gorm:"column:slug" json:"slug"`
-	Location string     `gorm:"column:location" json:"location"`
-	Date     *time.Time `gorm:"column:date" json:"date"`
-	Artists  []Artist   `gorm:"many2many:event_artist" json:"artists"`
-	ImageId  *int       `gorm:"column:image_id" json:"imageId,omitempty"`
-	Image    *Image     `gorm:"foreignKey:ImageId" json:"image,omitempty"`
+	Id        int        `gorm:"column:id" json:"id"`
+	Name      string     `gorm:"column:name" json:"name"`
+	Slug      string     `gorm:"column:slug" json:"slug"`
+	Location  string     `gorm:"column:location" json:"location"`
+	Date      *time.Time `gorm:"column:date" json:"date"`
+	Artists   []Artist   `gorm:"many2many:event_artist" json:"artists"`
+	ImageUuid *string    `gorm:"column:image_uuid" json:"imageUuid,omitempty"`
 }
 
 func (e *Event) TableName() string {
@@ -39,6 +38,7 @@ type EventDto struct {
 	Location  string     `json:"location"`
 	Date      *time.Time `json:"date"`
 	ArtistsId []int      `json:"artistsIds"`
+	ImageUuid *string    `json:"imageUuid,omitempty"`
 }
 
 type UpdateEventDto struct {

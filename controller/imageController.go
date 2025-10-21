@@ -11,7 +11,7 @@ type ImageController struct {
 	srv service.ImageServiceInterface
 }
 type ImageControllerInterface interface {
-	UploadImage(w http.ResponseWriter, r *http.Request)
+	UploadEventImage(w http.ResponseWriter, r *http.Request)
 	GetEventImage(w http.ResponseWriter, r *http.Request)
 	// GetArtistImage(w http.ResponseWriter, r *http.Request)
 	GetReleaseImage(w http.ResponseWriter, r *http.Request)
@@ -23,7 +23,7 @@ func NewImageController(service service.ImageServiceInterface) ImageControllerIn
 	}
 }
 
-func (ctrl *ImageController) UploadImage(w http.ResponseWriter, r *http.Request) {
+func (ctrl *ImageController) UploadEventImage(w http.ResponseWriter, r *http.Request) {
 
 	file, handler, err := r.FormFile("image")
 	if err != nil {
@@ -31,7 +31,7 @@ func (ctrl *ImageController) UploadImage(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	defer file.Close()
-	res, err := ctrl.srv.CreateImage(handler, file)
+	res, err := ctrl.srv.CreateImage(handler, file, "event")
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Errore nel salvataggio dell'immagine: %v", err), http.StatusInternalServerError)
@@ -60,9 +60,8 @@ func (ctrl *ImageController) GetEventImage(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	imageSize := r.URL.Query().Get("size")
 
-	img, mimetype, err := ctrl.srv.GetEventImage(slug, imageSize)
+	img, mimetype, err := ctrl.srv.GetEventImage(slug)
 
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -101,7 +100,7 @@ func (ctrl *ImageController) GetReleaseImage(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	img, mimetype, err := ctrl.srv.GetReleaseImage(id, releaseType)
+	img, mimetype, err := ctrl.srv.GetReleaseImage(id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

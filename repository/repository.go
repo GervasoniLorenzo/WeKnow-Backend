@@ -27,7 +27,7 @@ func NewRepository(db db.DatabaseInterface, a adapter.AdapterInterface) KnownRep
 		ArtistRepositoryInterface:  NewArtistRepository(db, a),
 		ReleaseRepositoryInterface: NewReleaseRepository(db),
 		UtilityRepositoryInterface: NewUtilityRepository(db),
-		ImageRepositoryInterface:   NewImageRepository(a),
+		ImageRepositoryInterface:   NewImageRepository(a, db),
 	}
 }
 

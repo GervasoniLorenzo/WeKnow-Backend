@@ -65,14 +65,14 @@ func (a *KnownAdapter) WriteFile(filePath string, file multipart.File) error {
 	return nil
 }
 
-func (a *KnownAdapter) GetImageBySlugDimensionAndType(entityId string, ImageType string, dimension string) (string, string, error) {
+func (a *KnownAdapter) GetImageBySlugDimensionAndType(entityId string, ImageType string) (string, string, error) {
 	extensions := []string{".png", ".jpg", ".jpeg"}
 	var path string
 	var file *os.File
 	var err error
 
 	for _, ext := range extensions {
-		path = fmt.Sprintf("./images/%s/%s/%s%s", ImageType, dimension, entityId, ext)
+		path = fmt.Sprintf("./images/%s/%s%s", ImageType, entityId, ext)
 		file, err = os.Open(path)
 		if err == nil {
 			break
@@ -81,7 +81,7 @@ func (a *KnownAdapter) GetImageBySlugDimensionAndType(entityId string, ImageType
 
 	if err != nil {
 		fmt.Println("Errore nell'apertura del file immagine:", err)
-		return "", "", fmt.Errorf("image not found for entityId %s with type %s and dimension %s", entityId, ImageType, dimension)
+		return "", "", fmt.Errorf("image not found for entityId %s with type %s", entityId, ImageType)
 	}
 	defer file.Close()
 
@@ -98,3 +98,5 @@ func (a *KnownAdapter) GetImageBySlugDimensionAndType(entityId string, ImageType
 
 	return path, mimeType, nil
 }
+
+

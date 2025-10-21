@@ -39,6 +39,8 @@ type DatabaseInterface interface {
 	UpdateEvent(event model.Event) error
 	EventSlugAlreadyExist(slug string) (bool, error)
 
+	GetImageUuidByEventSlug(slug string) (string, error)
+
 	GetReleases() ([]model.Release, error)
 }
 
@@ -254,4 +256,19 @@ func (db *KnownDatabase) EventSlugAlreadyExist(slug string) (bool, error) {
 		return false, err
 	}
 	return exist > 0, nil
+}
+func (db *KnownDatabase) GetImageUuidByEventSlug(slug string) (string, error) {
+	var event model.Event
+	err := db.
+		Select("image_uuid").
+		Where("slug = ?", slug).
+		First(&event).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", err
+	}
+	if event.ImageUuid == nil {
+		return "", errors.New("image uuid is nil")
+	}
+	return *event.ImageUuid, nil
 }
