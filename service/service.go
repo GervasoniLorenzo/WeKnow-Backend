@@ -30,6 +30,6 @@ func NewService(repo repository.KnownRepository, conf config.KnownConfig) Servic
 			conf,
 		),
 		ImageServiceInterface:   NewImageService(repo.ImageRepositoryInterface),
-		ReleaseServiceInterface: NewReleaseService(repo.ReleaseRepositoryInterface),
+		ReleaseServiceInterface: NewReleaseService(repo.ReleaseRepositoryInterface, repo.ArtistRepositoryInterface),
 	}
 }

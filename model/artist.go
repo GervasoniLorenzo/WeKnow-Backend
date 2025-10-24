@@ -9,6 +9,10 @@ type Artist struct {
 	Releases []Release `gorm:"many2many:release_artist;" json:"releases"`
 }
 
+type ArtistDto struct {
+	Name string `json:"name"`
+}
+
 func (Artist) TableName() string {
 	return "artist"
 }

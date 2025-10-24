@@ -16,34 +16,37 @@ type KnownDatabase struct {
 }
 
 type DatabaseInterface interface {
-	GetJobs() []model.Job
-	GetContacts() []model.Contact
-
-	//Artists
-	GetArtists() []model.Artist
-	GetArtistUuidBySlug(slug string) string
 	AddArtist(artist model.Artist) error
-	GetArtistsByIds(artistIds []int) ([]model.Artist, error)
-	GetArtistEvents(slug string) ([]model.Event, error)
-	GetArtistDetailsBySlug(slug string) (model.Artist, error)
-
-	//Events
-	GetNextEvent() (model.Event, error)
 	AddEvent(event model.Event) error
-	GetEventById(id int) (model.Event, error)
-	GetNext3Events() ([]model.Event, error)
-	GetPastEvents() ([]model.Event, error)
-	GetUpComingEvents() ([]model.Event, error)
 	AdminGetEventList() ([]model.Event, error)
+	CreateRelease(release model.Release) error
+	DeleteArtist(id int) error
 	DeleteEvent(id int) error
-	UpdateEvent(event model.Event) error
-	EventSlugAlreadyExist(slug string) (bool, error)
-
+	DeleteRelease(id int) error
+	GetArtistDetailsById(id int) (model.Artist, error)
+	GetArtistDetailsBySlug(slug string) (model.Artist, error)
+	GetArtistEvents(slug string) ([]model.Event, error)
+	GetArtistUuidBySlug(slug string) string
+	GetArtists() []model.Artist
+	GetArtistsByIds(artistIds []int) ([]model.Artist, error)
+	GetContacts() []model.Contact
+	GetEventById(id int) (model.Event, error)
 	GetImageUuidByEventSlug(slug string) (string, error)
-
+	GetJobs() []model.Job
+	GetNext3Events() ([]model.Event, error)
+	GetNextEvent() (model.Event, error)
+	GetPastEvents() ([]model.Event, error)
 	GetReleases() ([]model.Release, error)
+	GetUpComingEvents() ([]model.Event, error)
+	SlugAlreadyExist(slug string, slugEntity string) (bool, error)
+	UpdateArtist(artist model.Artist) error
+	UpdateEvent(event model.Event) error
+	UpdateRelease(release model.Release) error
 }
 
+func AddArtistPlaceholder() {} // placeholder to avoid unused-export issue if needed (no-op)
+
+// NewDataBase constructs the KnownDatabase
 func NewDataBase(config *config.KnownConfig) DatabaseInterface {
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d",
@@ -70,39 +73,8 @@ func NewDataBase(config *config.KnownConfig) DatabaseInterface {
 	}
 }
 
-func (db *KnownDatabase) GetJobs() []model.Job {
-	var jobs []model.Job
-	db.Find(&jobs)
-	return jobs
-}
-
-func (db *KnownDatabase) GetContacts() []model.Contact {
-	var contacts []model.Contact
-	db.Find(&contacts)
-	return contacts
-}
-
-func (db *KnownDatabase) GetArtists() []model.Artist {
-	var artists []model.Artist
-	db.Find(&artists)
-	return artists
-}
-
-func (db *KnownDatabase) GetArtistUuidBySlug(slug string) string {
-	var artist model.Artist
-	db.Where("slug = ?", slug).First(&artist)
-	return artist.Uuid
-}
-
 func (db *KnownDatabase) AddArtist(artist model.Artist) error {
 	return db.Create(&artist).Error
-}
-
-func (db *KnownDatabase) GetNextEvent() (model.Event, error) {
-	var event model.Event
-	return event, db.
-		Preload("Artists").
-		Where("date >= now()").Order("date ASC").First(&event).Error
 }
 
 func (db *KnownDatabase) AddEvent(event model.Event) error {
@@ -116,21 +88,52 @@ func (db *KnownDatabase) AddEvent(event model.Event) error {
 	return nil
 }
 
-func (db *KnownDatabase) GetArtistsByIds(artistIds []int) ([]model.Artist, error) {
-	var artists []model.Artist
-	err := db.Where("id IN ?", artistIds).Find(&artists).Error
-	return artists, err
-}
-
-func (db *KnownDatabase) GetEventById(id int) (model.Event, error) {
-	var event model.Event
-	err := db.Preload("Artists").First(&event, id).Error
-	return event, err
-}
-
-func (db *KnownDatabase) GetNext3Events() ([]model.Event, error) {
+func (db *KnownDatabase) AdminGetEventList() ([]model.Event, error) {
 	var events []model.Event
-	return events, db.Preload("Artists").Order("date ASC").Where("date >= now()").Limit(3).Find(&events).Error
+	return events, db.
+		Preload("Artists").
+		Where("date >= now()").
+		Order("date DESC").
+		Find(&events).
+		Error
+}
+
+func (db *KnownDatabase) CreateRelease(release model.Release) error {
+	return db.Create(&release).Error
+}
+
+func (db *KnownDatabase) DeleteArtist(id int) error {
+	return db.Delete(&model.Artist{}, id).Error
+}
+
+func (db *KnownDatabase) DeleteEvent(id int) error {
+	return db.Delete(&model.Event{}, id).Error
+}
+
+func (db *KnownDatabase) DeleteRelease(id int) error {
+	return db.Delete(&model.Release{}, id).Error
+}
+
+func (db *KnownDatabase) GetArtistDetailsById(id int) (model.Artist, error) {
+	var artist model.Artist
+	err := db.
+		Where("id = ?", id).
+		First(&artist).Error
+	return artist, err
+}
+
+func (db *KnownDatabase) GetArtistDetailsBySlug(slug string) (model.Artist, error) {
+	var artist model.Artist
+	err := db.
+		Preload("Events", func(db *gorm.DB) *gorm.DB {
+			return db.Order("date ASC")
+		}).
+		Preload("Releases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("release_date DESC")
+		}).
+		Where("slug = ?", slug).
+		First(&artist).Error
+	return artist, err
 }
 
 func (db *KnownDatabase) GetArtistEvents(slug string) ([]model.Event, error) {
@@ -142,23 +145,76 @@ func (db *KnownDatabase) GetArtistEvents(slug string) ([]model.Event, error) {
 		Find(&events).Error
 }
 
+func (db *KnownDatabase) GetArtistUuidBySlug(slug string) string {
+	var artist model.Artist
+	db.Where("slug = ?", slug).First(&artist)
+	return artist.Uuid
+}
+
+func (db *KnownDatabase) GetArtists() []model.Artist {
+	var artists []model.Artist
+	db.Find(&artists).Order("name ASC")
+	return artists
+}
+
+func (db *KnownDatabase) GetArtistsByIds(artistIds []int) ([]model.Artist, error) {
+	var artists []model.Artist
+	err := db.Where("id IN ?", artistIds).Find(&artists).Error
+	return artists, err
+}
+
+func (db *KnownDatabase) GetContacts() []model.Contact {
+	var contacts []model.Contact
+	db.Find(&contacts)
+	return contacts
+}
+
+func (db *KnownDatabase) GetEventById(id int) (model.Event, error) {
+	var event model.Event
+	err := db.Preload("Artists").First(&event, id).Error
+	return event, err
+}
+
+func (db *KnownDatabase) GetImageUuidByEventSlug(slug string) (string, error) {
+	var event model.Event
+	err := db.
+		Select("image_uuid").
+		Where("slug = ?", slug).
+		First(&event).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", err
+	}
+	if event.ImageUuid == nil {
+		return "", errors.New("image uuid is nil")
+	}
+	return *event.ImageUuid, nil
+}
+
+func (db *KnownDatabase) GetJobs() []model.Job {
+	var jobs []model.Job
+	db.Find(&jobs)
+	return jobs
+}
+
+func (db *KnownDatabase) GetNext3Events() ([]model.Event, error) {
+	var events []model.Event
+	return events, db.Preload("Artists").Order("date ASC").Where("date >= now()").Limit(3).Find(&events).Error
+}
+
+func (db *KnownDatabase) GetNextEvent() (model.Event, error) {
+	var event model.Event
+	return event, db.
+		Preload("Artists").
+		Where("date >= now()").Order("date ASC").First(&event).Error
+}
+
 func (db *KnownDatabase) GetPastEvents() ([]model.Event, error) {
 	var events []model.Event
 	return events, db.
 		Preload("Artists").
 		Order("date ASC").
 		Where("date < now()").
-		Find(&events).
-		Error
-}
-
-func (db *KnownDatabase) GetUpComingEvents() ([]model.Event, error) {
-	var events []model.Event
-	return events, db.
-		Preload("Artists").
-		Order("date ASC").
-		Where("date >= now()").
-		Offset(1).
 		Find(&events).
 		Error
 }
@@ -179,32 +235,47 @@ func (db *KnownDatabase) GetReleases() ([]model.Release, error) {
 	return releases, nil
 }
 
-func (db *KnownDatabase) GetArtistDetailsBySlug(slug string) (model.Artist, error) {
-	var artist model.Artist
-	err := db.
-		Preload("Events", func(db *gorm.DB) *gorm.DB {
-			return db.Order("date ASC")
-		}).
-		Preload("Releases", func(db *gorm.DB) *gorm.DB {
-			return db.Order("release_date DESC")
-		}).
-		Where("slug = ?", slug).
-		First(&artist).Error
-	return artist, err
-}
-
-func (db *KnownDatabase) AdminGetEventList() ([]model.Event, error) {
+func (db *KnownDatabase) GetUpComingEvents() ([]model.Event, error) {
 	var events []model.Event
 	return events, db.
 		Preload("Artists").
+		Order("date ASC").
 		Where("date >= now()").
-		Order("date DESC").
+		Offset(1).
 		Find(&events).
 		Error
 }
 
-func (db *KnownDatabase) DeleteEvent(id int) error {
-	return db.Delete(&model.Event{}, id).Error
+func (db *KnownDatabase) SlugAlreadyExist(slug string, slugEntity string) (bool, error) {
+
+	var exist int
+	var entity interface{}
+	switch slugEntity {
+	case "event":
+		entity = &model.Event{}
+	default:
+		entity = &model.Artist{}
+	}
+
+	err := db.
+		Model(entity).
+		Select("count(id)").
+		Where("slug = ?", slug).
+		Scan(&exist).
+		Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, err
+	}
+	return exist > 0, nil
+}
+
+func (db *KnownDatabase) UpdateArtist(artist model.Artist) error {
+	return db.Model(&artist).
+		Omit("Events", "Events.*", "Releases", "Releases.*").
+		Updates(map[string]any{
+			"name": artist.Name,
+		}).Error
 }
 
 func (db *KnownDatabase) UpdateEvent(event model.Event) error {
@@ -229,7 +300,7 @@ func (db *KnownDatabase) UpdateEvent(event model.Event) error {
 		Updates(map[string]any{
 			"name":     event.Name,
 			"location": event.Location,
-			"date":     event.Date, // *time.Time ok
+			"date":     event.Date,
 		}).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -243,32 +314,22 @@ func (db *KnownDatabase) UpdateEvent(event model.Event) error {
 	return tx.Commit().Error
 }
 
-func (db *KnownDatabase) EventSlugAlreadyExist(slug string) (bool, error) {
-	var exist int
-	err := db.
-		Model(&model.Event{}).
-		Select("count(id)").
-		Where("slug = ?", slug).
-		Scan(&exist).
-		Error
+func (db *KnownDatabase) UpdateRelease(release model.Release) error {
+	err := db.Model(&release).
+		Omit("Artist", "Artist.*", "Links", "Links.*").
+		Updates(map[string]any{
+			"title":        release.Title,
+			"release_date": release.ReleaseDate,
+		}).Error
 
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return false, err
+	if err != nil {
+		return err
 	}
-	return exist > 0, nil
-}
-func (db *KnownDatabase) GetImageUuidByEventSlug(slug string) (string, error) {
-	var event model.Event
-	err := db.
-		Select("image_uuid").
-		Where("slug = ?", slug).
-		First(&event).Error
-
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", err
+	
+	err = db.Model(&release).Association("Artist").Replace(release.Artist)
+	if err != nil {
+		return err
 	}
-	if event.ImageUuid == nil {
-		return "", errors.New("image uuid is nil")
-	}
-	return *event.ImageUuid, nil
+	
+	return db.Model(&release).Association("Links").Replace(release.Links)
 }

@@ -42,8 +42,8 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	admin.HandleFunc("/event/image", ctrl.UploadEventImage).Methods("POST")
 
 	admin.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
-	// admin.HandleFunc("/artist/{slug}", ctrl.UpdateArtist).Methods("PUT")
-	// admin.HandleFunc("/artist/{slug}", ctrl.DeleteArtist).Methods("DELETE")
+	admin.HandleFunc("/artist/{id}", ctrl.UpdateArtist).Methods("PUT")
+	admin.HandleFunc("/artist/{id}", ctrl.DeleteArtist).Methods("DELETE")
 	// admin.HandleFunc("/release", ctrl.CreateRelease).Methods("POST")
 	// admin.HandleFunc("/release/{id}", ctrl.UpdateRelease).Methods("PUT")
 	// admin.HandleFunc("/release/{id}", ctrl.DeleteRelease).Methods("DELETE")

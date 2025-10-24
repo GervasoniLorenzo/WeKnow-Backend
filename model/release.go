@@ -9,6 +9,13 @@ type Release struct {
 	Artist      []Artist      `json:"artist" gorm:"many2many:release_artist;"`
 }
 
+type ReleaseDto struct {
+	Title       string        `json:"title"`
+	ReleaseDate string        `json:"release_date"`
+	Links       []ReleaseLink `json:"links"`
+	ArtistIds   []int         `json:"artist_ids"`
+}
+
 type ReleaseLink struct {
 	ID        string `json:"id" gorm:"primaryKey"`
 	Platform  string `json:"platform" gorm:"column:platform;not null"`

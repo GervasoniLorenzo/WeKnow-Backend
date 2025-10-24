@@ -158,14 +158,14 @@ func (s *EventService) AdminCreateEvent(event model.EventDto) error {
 
 	slug := s.u.GenerateSlug(event.Name)
 	// Assegna il valore di controllo a una variabile, poi ciclaci sopra
-	exists, err := s.eventRepo.CheckSlugExists(slug)
+	exists, err := s.eventRepo.CheckEventSlugExists(slug)
 	if err != nil {
 		return err
 	}
 	count := 0
 	for exists {
 		count++
-		exists, err = s.eventRepo.CheckSlugExists(fmt.Sprintf("%s-%v", slug, count))
+		exists, err = s.eventRepo.CheckEventSlugExists(fmt.Sprintf("%s-%v", slug, count))
 		if err != nil {
 			return err
 		}

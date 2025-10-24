@@ -22,7 +22,7 @@ type EventRepositoryInterface interface {
 	AdminGetEventList() ([]model.Event, error)
 	AdminDeleteEvent(id int) error
 	AdminUpdateEvent(event model.Event) error
-	CheckSlugExists(slug string) (bool, error)
+	CheckEventSlugExists(slug string) (bool, error)
 }
 
 func NewEventRepository(db db.DatabaseInterface, adapter adapter.AdapterInterface) EventRepositoryInterface {
@@ -67,6 +67,6 @@ func (r *EventRepository) AdminUpdateEvent(event model.Event) error {
 	return r.dataBase.UpdateEvent(event)
 }
 
-func (r *EventRepository) CheckSlugExists(slug string) (bool, error) {
-	return r.dataBase.EventSlugAlreadyExist(slug)
+func (r *EventRepository) CheckEventSlugExists(slug string) (bool, error) {
+	return r.dataBase.SlugAlreadyExist(slug, "event")
 }

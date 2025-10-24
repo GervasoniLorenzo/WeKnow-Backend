@@ -1,19 +1,26 @@
 package service
 
 import (
+	"fmt"
 	"weKnow/model"
 	"weKnow/repository"
+	"weKnow/utils"
+
+	"github.com/google/uuid"
 )
 
 type ArtistServiceInterface interface {
 	GetArtists() []model.ArtistBasicInfo
-	AddArtist(artist model.Artist) error
+	AddArtist(artist model.ArtistDto) error
+	UpdateArtist(artist model.ArtistDto, id int) error
 	GetArtistImage(slug string) (string, string, error)
 	GetArtistDetails(artistSlug string) (model.Artist, error)
+	DeleteArtist(id int) error
 }
 
 type ArtistService struct {
 	repo repository.ArtistRepositoryInterface
+	u    utils.UtilsInterface
 }
 
 func NewArtistService(repo repository.ArtistRepositoryInterface) ArtistServiceInterface {
@@ -24,6 +31,16 @@ func NewArtistService(repo repository.ArtistRepositoryInterface) ArtistServiceIn
 
 func (s *ArtistService) GetArtists() []model.ArtistBasicInfo {
 	list := []model.ArtistBasicInfo{}
+	defer func() {
+		n := len(list)
+		for i := 0; i < n; i++ {
+			for j := i + 1; j < n; j++ {
+				if list[j].Name < list[i].Name {
+					list[i], list[j] = list[j], list[i]
+				}
+			}
+		}
+	}()
 	for _, artist := range s.repo.GetArtists() {
 		artist := model.ArtistBasicInfo{
 			Id:   artist.Id,
@@ -35,7 +52,28 @@ func (s *ArtistService) GetArtists() []model.ArtistBasicInfo {
 	return list
 }
 
-func (s *ArtistService) AddArtist(artist model.Artist) error {
+func (s *ArtistService) AddArtist(artistDto model.ArtistDto) error {
+	slug := s.u.GenerateSlug(artistDto.Name)
+	exists, err := s.repo.CheckArtistSlugExists(slug)
+	if err != nil {
+		return err
+	}
+	count := 0
+	for exists {
+		count++
+		exists, err = s.repo.CheckArtistSlugExists(fmt.Sprintf("%s-%v", slug, count))
+		if err != nil {
+			return err
+		}
+		if exists {
+			slug = fmt.Sprintf("%s-%d", slug, count)
+		}
+	}
+	artist := model.Artist{
+		Name: artistDto.Name,
+		Slug: slug,
+		Uuid: uuid.NewString(),
+	}
 	return s.repo.CreateArtist(artist)
 }
 
@@ -46,4 +84,17 @@ func (s *ArtistService) GetArtistImage(slug string) (string, string, error) {
 
 func (s *ArtistService) GetArtistDetails(artistSlug string) (model.Artist, error) {
 	return s.repo.GetArtistDetailsBySlug(artistSlug)
+}
+
+func (s *ArtistService) UpdateArtist(artistDto model.ArtistDto, id int) error {
+	artist, err := s.repo.GetArtistDetailsById(id)
+	if err != nil {
+		return err
+	}
+	artist.Name = artistDto.Name
+	return s.repo.UpdateArtist(artist)
+}
+
+func (s *ArtistService) DeleteArtist(id int) error {
+	return s.repo.DeleteArtist(id)
 }

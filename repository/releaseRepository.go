@@ -7,7 +7,7 @@ import (
 
 type ReleaseRepositoryInterface interface {
 	GetReleases() ([]model.Release, error)
-	CreateRelease(model.Release) error
+	AddRelease(model.Release) error
 	UpdateRelease(release model.Release) error
 	DeleteRelease(id int) error
 }
@@ -28,13 +28,13 @@ func (r *ReleaseRepository) GetReleases() ([]model.Release, error) {
 	return res, nil
 }
 
-func (r *ReleaseRepository) CreateRelease(model.Release) error {
-	return nil
+func (r *ReleaseRepository) AddRelease(release model.Release) error {
+	return r.dataBase.CreateRelease(release)
 }
 
 func (r *ReleaseRepository) UpdateRelease(release model.Release) error {
-	return nil
+	return r.dataBase.UpdateRelease(release)
 }
 func (r *ReleaseRepository) DeleteRelease(id int) error {
-	return nil
+	return r.dataBase.DeleteRelease(id)
 }
