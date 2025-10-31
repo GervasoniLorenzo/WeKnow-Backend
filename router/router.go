@@ -11,7 +11,7 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	r := mux.NewRouter()
 
 	// jwtSecret := []byte(os.Getenv("APP_JWT_HS256_SECRET"))
-	
+
 	// ARTISTS
 	r.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	r.HandleFunc("/artist/image/{slug}", ctrl.GetArtistImage).Methods("GET")
@@ -29,7 +29,8 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 
 	// RELEASES
 	r.HandleFunc("/release/list", ctrl.GetReleases).Methods("GET")
-	r.HandleFunc("/release/image", ctrl.GetReleaseImage).Methods("GET")
+	r.HandleFunc("/release/image/{slug}", ctrl.GetReleaseImage).Methods("GET")
+	// r.HandleFunc("/release/{slug}/artists", ctrl.GetReleaseArtists).Methods("GET")
 
 	// ADMIN
 	admin := r.PathPrefix("/admin").Subrouter()
@@ -44,8 +45,11 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	admin.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	admin.HandleFunc("/artist/{id}", ctrl.UpdateArtist).Methods("PUT")
 	admin.HandleFunc("/artist/{id}", ctrl.DeleteArtist).Methods("DELETE")
-	// admin.HandleFunc("/release", ctrl.CreateRelease).Methods("POST")
-	// admin.HandleFunc("/release/{id}", ctrl.UpdateRelease).Methods("PUT")
-	// admin.HandleFunc("/release/{id}", ctrl.DeleteRelease).Methods("DELETE")
+	// RELEASES
+	admin.HandleFunc("/release/list", ctrl.GetReleases).Methods("GET")
+	admin.HandleFunc("/release/image", ctrl.UploadReleaseImage).Methods("POST")
+	admin.HandleFunc("/release", ctrl.CreateRelease).Methods("POST")
+	admin.HandleFunc("/release/{id}", ctrl.UpdateRelease).Methods("PUT")
+	admin.HandleFunc("/release/{id}", ctrl.DeleteRelease).Methods("DELETE")
 	return r
 }

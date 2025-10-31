@@ -21,11 +21,7 @@ func NewReleaseRepository(db db.DatabaseInterface) ReleaseRepositoryInterface {
 	}
 }
 func (r *ReleaseRepository) GetReleases() ([]model.Release, error) {
-	res, err := r.dataBase.GetReleases()
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return r.dataBase.GetReleases()
 }
 
 func (r *ReleaseRepository) AddRelease(release model.Release) error {

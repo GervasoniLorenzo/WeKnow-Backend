@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"weKnow/config"
 	"weKnow/model"
@@ -129,7 +130,7 @@ func (db *KnownDatabase) GetArtistDetailsBySlug(slug string) (model.Artist, erro
 			return db.Order("date ASC")
 		}).
 		Preload("Releases", func(db *gorm.DB) *gorm.DB {
-			return db.Order("release_date DESC")
+			return db.Order("date DESC")
 		}).
 		Where("slug = ?", slug).
 		First(&artist).Error
@@ -222,10 +223,10 @@ func (db *KnownDatabase) GetPastEvents() ([]model.Event, error) {
 func (db *KnownDatabase) GetReleases() ([]model.Release, error) {
 	var releases []model.Release
 	err := db.
-		Preload("Artist").
+		Preload("Artists").
 		Preload("Links").
-		Where("release_date <= now()").
-		Order("release_date DESC").
+		Where("date::timestamptz <= now()").
+		Order("date DESC").
 		Limit(9).
 		Find(&releases).
 		Error
@@ -315,21 +316,60 @@ func (db *KnownDatabase) UpdateEvent(event model.Event) error {
 }
 
 func (db *KnownDatabase) UpdateRelease(release model.Release) error {
-	err := db.Model(&release).
-		Omit("Artist", "Artist.*", "Links", "Links.*").
-		Updates(map[string]any{
-			"title":        release.Title,
-			"release_date": release.ReleaseDate,
-		}).Error
+	return db.Transaction(func(tx *gorm.DB) error {
+		// 1) campi base
+		if err := tx.Model(&model.Release{}).
+			Where("id = ?", release.ID).
+			Updates(map[string]any{
+				"title": release.Title,
+				"date":  release.Date,
+				"label": release.Label,
+			}).Error; err != nil {
+			return err
+		}
 
-	if err != nil {
-		return err
-	}
-	
-	err = db.Model(&release).Association("Artist").Replace(release.Artist)
-	if err != nil {
-		return err
-	}
-	
-	return db.Model(&release).Association("Links").Replace(release.Links)
+		// 2) artists
+		if err := tx.Model(&model.Release{ID: release.ID}).
+			Association("Artists").Replace(release.Artists); err != nil {
+			return err
+		}
+
+		// 3) LINKS: mappa gli ID per rispettare la unique (release_id, lower(platform), url)
+		var existing []model.ReleaseLink
+		if err := tx.Where("release_id = ?", release.ID).
+			Find(&existing).Error; err != nil {
+			return err
+		}
+
+		exByKey := make(map[string]model.ReleaseLink, len(existing))
+		key := func(p, u string) string {
+			return strings.ToLower(strings.TrimSpace(p)) + "|" + strings.TrimSpace(u)
+		}
+		for _, e := range existing {
+			exByKey[key(e.Platform, e.URL)] = e
+		}
+
+		for i := range release.Links {
+			// assicura FK
+			release.Links[i].ReleaseID = release.ID
+
+			// se ID mancante e già esiste un link con stessa chiave → usa l'ID esistente (update, non insert)
+			if release.Links[i].ID == 0 {
+				if ex, ok := exByKey[key(release.Links[i].Platform, release.Links[i].URL)]; ok {
+					release.Links[i].ID = ex.ID
+				}
+			}
+		}
+
+		// 4) replace finale (aggiunge/aggiorna/rimuove)
+		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).
+			Model(&model.Release{ID: release.ID}).
+			Association("Links").
+			Unscoped().
+			Replace(release.Links); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }

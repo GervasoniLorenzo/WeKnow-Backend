@@ -1,7 +1,7 @@
 package model
 
 type Artist struct {
-	Id       int       `gorm:"id" json:"id"`
+	Id       int       `gorm:"primaryKey" json:"id"`
 	Name     string    `gorm:"name" json:"name"`
 	Slug     string    `gorm:"slug" json:"slug"`
 	Uuid     string    `gorm:"uuid" json:"uuid"`

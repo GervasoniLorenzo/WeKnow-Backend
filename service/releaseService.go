@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+	"strings"
 	"weKnow/model"
 	"weKnow/repository"
 )
@@ -41,29 +43,40 @@ func (s *ReleaseService) AddRelease(releaseDto model.ReleaseDto) error {
 		artists = append(artists, artist)
 	}
 	release := model.Release{
-		Title:       releaseDto.Title,
-		ReleaseDate: releaseDto.ReleaseDate,
-		Links:       releaseDto.Links,
-		Artist:      artists,
+		Title:   releaseDto.Title,
+		Date:    releaseDto.Date,
+		Links:   releaseDto.Links,
+		Artists: artists,
 	}
 	return s.releaseRepo.AddRelease(release)
 }
 
 func (s *ReleaseService) UpdateRelease(releaseDto model.ReleaseDto, id int) error {
-	artists := []model.Artist{}
-	for _, artistId := range releaseDto.ArtistIds {
-		artist, err := s.artistRepo.GetArtistDetailsById(artistId)
-		if err != nil {
-			return err
+	if len(releaseDto.ArtistIds) == 0 {
+		return fmt.Errorf("artistsIds is required and cannot be empty")
+	}
+	artists := make([]model.Artist, 0, len(releaseDto.ArtistIds))
+	for _, aid := range releaseDto.ArtistIds {
+		artists = append(artists, model.Artist{Id: aid})
+	}
+
+	links := make([]model.ReleaseLink, 0, len(releaseDto.Links))
+	for _, l := range releaseDto.Links {
+		if l.ID == 0 {
+			l.ReleaseID = id
 		}
-		artists = append(artists, artist)
+		links = append(links, l)
 	}
+
 	release := model.Release{
-		Title:       releaseDto.Title,
-		ReleaseDate: releaseDto.ReleaseDate,
-		Links:       releaseDto.Links,
-		Artist:      artists,
+		ID:      id,
+		Title:   strings.TrimSpace(releaseDto.Title),
+		Date:    releaseDto.Date,
+		Label:   strings.TrimSpace(releaseDto.Label),
+		Artists: artists,
+		Links:   links,
 	}
+
 	return s.releaseRepo.UpdateRelease(release)
 }
 

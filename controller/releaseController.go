@@ -16,6 +16,9 @@ type ReleaseController struct {
 
 type ReleaseControllerInterface interface {
 	GetReleases(w http.ResponseWriter, r *http.Request)
+	CreateRelease(w http.ResponseWriter, r *http.Request)
+	UpdateRelease(w http.ResponseWriter, r *http.Request)
+	DeleteRelease(w http.ResponseWriter, r *http.Request)
 }
 
 func NewReleaseController(service service.ReleaseServiceInterface) ReleaseControllerInterface {
@@ -46,7 +49,7 @@ func (ctrl *ReleaseController) GetReleases(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonData)
 }
 
-func (ctrl *ReleaseController) AddRelease(w http.ResponseWriter, r *http.Request) {
+func (ctrl *ReleaseController) CreateRelease(w http.ResponseWriter, r *http.Request) {
 	release := new(model.ReleaseDto)
 	err := json.NewDecoder(r.Body).Decode(&release)
 	if err != nil {

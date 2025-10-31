@@ -1,26 +1,30 @@
 package model
 
+import "time"
+
 type Release struct {
-	ID          string        `json:"id" gorm:"primaryKey"`
-	Slug        string        `json:"slug" gorm:"column:slug;not null;unique"`
-	Title       string        `json:"title" gorm:"column:name;not null"`
-	ReleaseDate string        `json:"release_date" gorm:"column:release_date;not null"`
-	Links       []ReleaseLink `json:"links" gorm:"foreignKey:ReleaseID;references:ID"`
-	Artist      []Artist      `json:"artist" gorm:"many2many:release_artist;"`
+	ID      int           `json:"id" gorm:"primaryKey"`
+	Slug    string        `json:"slug" gorm:"column:slug;not null;unique"`
+	Title   string        `json:"title" gorm:"column:title;not null"`
+	Label   string        `json:"label" gorm:"column:label;"`
+	Date    *time.Time    `json:"date" gorm:"column:date;not null"`
+	Links   []ReleaseLink `json:"links" gorm:"foreignKey:ReleaseID;references:ID"`
+	Artists []Artist      `json:"artists" gorm:"many2many:release_artist;"`
 }
 
 type ReleaseDto struct {
-	Title       string        `json:"title"`
-	ReleaseDate string        `json:"release_date"`
-	Links       []ReleaseLink `json:"links"`
-	ArtistIds   []int         `json:"artist_ids"`
+	Title     string        `json:"title"`
+	Date      *time.Time    `json:"date"`
+	Label     string        `json:"label"`
+	Links     []ReleaseLink `json:"links"`
+	ArtistIds []int         `json:"artistIds"`
 }
 
 type ReleaseLink struct {
-	ID        string `json:"id" gorm:"primaryKey"`
+	ID        int    `json:"id" gorm:"primaryKey"`
 	Platform  string `json:"platform" gorm:"column:platform;not null"`
 	URL       string `json:"url" gorm:"column:url;not null"`
-	ReleaseID string `json:"release_id" gorm:"column:release_id;not null"`
+	ReleaseID int    `json:"release_id" gorm:"column:release_id;not null"`
 }
 
 func (Release) TableName() string {
@@ -32,17 +36,17 @@ func (ReleaseLink) TableName() string {
 }
 
 type ReleaseResponseDto struct {
-	ID          string        `json:"id"`
-	Slug        string        `json:"slug"`
-	Title       string        `json:"title"`
-	ReleaseDate string        `json:"release_date"`
-	Links       []ReleaseLink `json:"links"`
-	Artists     string        `json:"artists"`
+	ID      int           `json:"id"`
+	Slug    string        `json:"slug"`
+	Title   string        `json:"title"`
+	Date    *time.Time    `json:"date"`
+	Links   []ReleaseLink `json:"links"`
+	Artists string        `json:"artists"`
 }
 
 func FormatRelease(release Release) ReleaseResponseDto {
 	artists := ""
-	for _, artist := range release.Artist {
+	for _, artist := range release.Artists {
 		artists += artist.Name + ", "
 	}
 	if len(artists) > 0 {
@@ -50,11 +54,11 @@ func FormatRelease(release Release) ReleaseResponseDto {
 	}
 
 	return ReleaseResponseDto{
-		ID:          release.ID,
-		Slug:        release.Slug,
-		Title:       release.Title,
-		ReleaseDate: release.ReleaseDate,
-		Links:       release.Links,
-		Artists:     artists,
+		ID:      release.ID,
+		Slug:    release.Slug,
+		Title:   release.Title,
+		Date:    release.Date,
+		Links:   release.Links,
+		Artists: artists,
 	}
 }
