@@ -5,8 +5,6 @@ import (
 	"weKnow/model"
 	"weKnow/repository"
 	"weKnow/utils"
-
-	"github.com/google/uuid"
 )
 
 type ArtistServiceInterface interface {
@@ -70,9 +68,10 @@ func (s *ArtistService) AddArtist(artistDto model.ArtistDto) error {
 		}
 	}
 	artist := model.Artist{
-		Name: artistDto.Name,
-		Slug: slug,
-		Uuid: uuid.NewString(),
+		Name:      artistDto.Name,
+		Bio:       artistDto.Bio,
+		ImageUuid: &artistDto.ImageUuid,
+		Slug:      slug,
 	}
 	return s.repo.CreateArtist(artist)
 }
@@ -87,11 +86,12 @@ func (s *ArtistService) GetArtistDetails(artistSlug string) (model.Artist, error
 }
 
 func (s *ArtistService) UpdateArtist(artistDto model.ArtistDto, id int) error {
-	artist, err := s.repo.GetArtistDetailsById(id)
-	if err != nil {
-		return err
+	artist := model.Artist{
+		Id:        id,
+		Name:      artistDto.Name,
+		Bio:       artistDto.Bio,
+		ImageUuid: &artistDto.ImageUuid,
 	}
-	artist.Name = artistDto.Name
 	return s.repo.UpdateArtist(artist)
 }
 

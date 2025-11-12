@@ -33,6 +33,8 @@ type DatabaseInterface interface {
 	GetContacts() []model.Contact
 	GetEventById(id int) (model.Event, error)
 	GetImageUuidByEventSlug(slug string) (string, error)
+	GetImageUuidByReleaseSlug(slug string) (string, error)
+	GetImageUuidByArtistSlug(slug string) (string, error)
 	GetJobs() []model.Job
 	GetNext3Events() ([]model.Event, error)
 	GetNextEvent() (model.Event, error)
@@ -169,7 +171,7 @@ func (db *KnownDatabase) GetArtistEvents(slug string) ([]model.Event, error) {
 func (db *KnownDatabase) GetArtistUuidBySlug(slug string) string {
 	var artist model.Artist
 	db.Where("slug = ?", slug).First(&artist)
-	return artist.Uuid
+	return *artist.ImageUuid
 }
 
 func (db *KnownDatabase) GetArtists() []model.Artist {
@@ -210,6 +212,38 @@ func (db *KnownDatabase) GetImageUuidByEventSlug(slug string) (string, error) {
 		return "", errors.New("image uuid is nil")
 	}
 	return *event.ImageUuid, nil
+}
+
+func (db *KnownDatabase) GetImageUuidByReleaseSlug(slug string) (string, error) {
+	var release model.Release
+	err := db.
+		Select("image_uuid").
+		Where("slug = ?", slug).
+		First(&release).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", err
+	}
+	if release.ImageUuid == nil {
+		return "", errors.New("image uuid is nil")
+	}
+	return *release.ImageUuid, nil
+}
+
+func (db *KnownDatabase) GetImageUuidByArtistSlug(slug string) (string, error) {
+	var artist model.Artist
+	err := db.
+		Select("image_uuid").
+		Where("slug = ?", slug).
+		First(&artist).Error
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", err
+	}
+	if artist.ImageUuid == nil {
+		return "", errors.New("image uuid is nil")
+	}
+	return *artist.ImageUuid, nil
 }
 
 func (db *KnownDatabase) GetJobs() []model.Job {
@@ -295,7 +329,9 @@ func (db *KnownDatabase) UpdateArtist(artist model.Artist) error {
 	return db.Model(&artist).
 		Omit("Events", "Events.*", "Releases", "Releases.*").
 		Updates(map[string]any{
-			"name": artist.Name,
+			"name":       artist.Name,
+			"bio":        artist.Bio,
+			"image_uuid": artist.ImageUuid,
 		}).Error
 }
 
@@ -319,9 +355,10 @@ func (db *KnownDatabase) UpdateEvent(event model.Event) error {
 	if err := tx.Model(&persisted).
 		Omit("Artists", "Artists.*").
 		Updates(map[string]any{
-			"name":     event.Name,
-			"location": event.Location,
-			"date":     event.Date,
+			"name":       event.Name,
+			"location":   event.Location,
+			"date":       event.Date,
+			"image_uuid": event.ImageUuid,
 		}).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -337,24 +374,22 @@ func (db *KnownDatabase) UpdateEvent(event model.Event) error {
 
 func (db *KnownDatabase) UpdateRelease(release model.Release) error {
 	return db.Transaction(func(tx *gorm.DB) error {
-		// 1) campi base
 		if err := tx.Model(&model.Release{}).
 			Where("id = ?", release.ID).
 			Updates(map[string]any{
-				"title": release.Title,
-				"date":  release.Date,
-				"label": release.Label,
+				"title":      release.Title,
+				"date":       release.Date,
+				"label":      release.Label,
+				"image_uuid": release.ImageUuid,
 			}).Error; err != nil {
 			return err
 		}
 
-		// 2) artists
 		if err := tx.Model(&model.Release{ID: release.ID}).
 			Association("Artists").Replace(release.Artists); err != nil {
 			return err
 		}
 
-		// 3) LINKS: mappa gli ID per rispettare la unique (release_id, lower(platform), url)
 		var existing []model.ReleaseLink
 		if err := tx.Where("release_id = ?", release.ID).
 			Find(&existing).Error; err != nil {

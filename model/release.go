@@ -3,13 +3,14 @@ package model
 import "time"
 
 type Release struct {
-	ID      int           `json:"id" gorm:"primaryKey"`
-	Slug    string        `json:"slug" gorm:"column:slug;not null;unique"`
-	Title   string        `json:"title" gorm:"column:title;not null"`
-	Label   string        `json:"label" gorm:"column:label;"`
-	Date    *time.Time    `json:"date" gorm:"column:date;not null"`
-	Links   []ReleaseLink `json:"links" gorm:"foreignKey:ReleaseID;references:ID"`
-	Artists []Artist      `json:"artists" gorm:"many2many:release_artist;"`
+	ID        int           `json:"id" gorm:"primaryKey"`
+	Slug      string        `json:"slug" gorm:"column:slug;not null;unique"`
+	Title     string        `json:"title" gorm:"column:title;not null"`
+	Label     string        `json:"label" gorm:"column:label;"`
+	Date      *time.Time    `json:"date" gorm:"column:date;not null"`
+	Links     []ReleaseLink `json:"links" gorm:"foreignKey:ReleaseID;references:ID"`
+	Artists   []Artist      `json:"artists" gorm:"many2many:release_artist;"`
+	ImageUuid *string        `json:"imageUrl" gorm:"column:image_uuid;"`
 }
 
 type ReleaseDto struct {
@@ -18,6 +19,7 @@ type ReleaseDto struct {
 	Label     string        `json:"label"`
 	Links     []ReleaseLink `json:"links"`
 	ArtistIds []int         `json:"artistIds"`
+	ImageUuid string        `json:"imageUuid"`
 }
 
 type ReleaseLink struct {

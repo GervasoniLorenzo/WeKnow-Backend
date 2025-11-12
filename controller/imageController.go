@@ -28,7 +28,7 @@ func NewImageController(service service.ImageServiceInterface) ImageControllerIn
 
 func (ctrl *ImageController) UploadEventImage(w http.ResponseWriter, r *http.Request) {
 
-	file, handler, err := r.FormFile("image")
+	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Errore nel leggere il file: %v", err), http.StatusBadRequest)
 		return
@@ -75,21 +75,21 @@ func (ctrl *ImageController) GetEventImage(w http.ResponseWriter, r *http.Reques
 	http.ServeFile(w, r, img)
 }
 
-// func (ctrl *ImageController) GetArtistImage(w http.ResponseWriter, r *http.Request) {
-// 	id := r.URL.Query().Get("id")
-// 	artistType := r.URL.Query().Get("type")
-// 	if id == "" || artistType == "" {
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	img, mimetype, err := ctrl.srv.GetArtistsImage(id, artistType)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusNotFound)
-// 		return
-// 	}
-// 	w.Header().Set("Content-Type", mimetype)
-// 	http.ServeFile(w, r, img)
-// }
+func (ctrl *ImageController) GetArtistImage(w http.ResponseWriter, r *http.Request) {
+	slug := r.URL.Query().Get("slug")
+	artistType := r.URL.Query().Get("type")
+	if slug == "" || artistType == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	img, mimetype, err := ctrl.srv.GetArtistsImage(slug)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", mimetype)
+	http.ServeFile(w, r, img)
+}
 
 func (ctrl *ImageController) GetReleaseImage(w http.ResponseWriter, r *http.Request) {
 	slug := mux.Vars(r)["slug"]
@@ -111,7 +111,7 @@ func (ctrl *ImageController) GetReleaseImage(w http.ResponseWriter, r *http.Requ
 
 func (ctrl *ImageController) UploadReleaseImage(w http.ResponseWriter, r *http.Request) {
 
-	file, handler, err := r.FormFile("image")
+	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Errore nel leggere il file: %v", err), http.StatusBadRequest)
 		return

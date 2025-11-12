@@ -62,10 +62,13 @@ func (s *ReleaseService) AddRelease(releaseDto model.ReleaseDto) error {
 		artists = append(artists, artist)
 	}
 	release := model.Release{
-		Title:   releaseDto.Title,
-		Date:    releaseDto.Date,
-		Links:   releaseDto.Links,
-		Artists: artists,
+		Title:     releaseDto.Title,
+		Date:      releaseDto.Date,
+		Links:     releaseDto.Links,
+		Artists:   artists,
+		Label:     releaseDto.Label,
+		Slug:      slug,
+		ImageUuid: &releaseDto.ImageUuid,
 	}
 	return s.releaseRepo.AddRelease(release)
 }
@@ -89,12 +92,13 @@ func (s *ReleaseService) UpdateRelease(releaseDto model.ReleaseDto, id int) erro
 	}
 
 	release := model.Release{
-		ID:      id,
-		Title:   strings.TrimSpace(releaseDto.Title),
-		Date:    releaseDto.Date,
-		Label:   strings.TrimSpace(releaseDto.Label),
-		Artists: artists,
-		Links:   links,
+		ID:        id,
+		Title:     strings.TrimSpace(releaseDto.Title),
+		Date:      releaseDto.Date,
+		Label:     strings.TrimSpace(releaseDto.Label),
+		Artists:   artists,
+		Links:     links,
+		ImageUuid: &releaseDto.ImageUuid,
 	}
 
 	return s.releaseRepo.UpdateRelease(release)

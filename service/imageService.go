@@ -19,8 +19,8 @@ type ImageService struct {
 type ImageServiceInterface interface {
 	CreateImage(handler *multipart.FileHeader, file multipart.File, entity string) (string, error)
 	GetEventImage(slug string) (string, string, error)
-	GetArtistsImage(id string) (string, string, error)
-	GetReleaseImage(id string) (string, string, error)
+	GetArtistsImage(slug string) (string, string, error)
+	GetReleaseImage(slug string) (string, string, error)
 }
 
 func NewImageService(img repository.ImageRepositoryInterface) ImageServiceInterface {
@@ -52,17 +52,23 @@ func (s *ImageService) CreateImage(handler *multipart.FileHeader, file multipart
 }
 
 func (s *ImageService) GetEventImage(slug string) (string, string, error) {
-	imageUuid, err := s.ir.GetImageUuidByEventSlug(slug)
+	imageUuid, err := s.ir.GetImageUuidBySlugAndType(slug, "event")
 	if err != nil {
 		return "", "", err
 	}
-	return s.ir.GetImageBySlugDimensionAndType(imageUuid, "event")
+	return s.ir.GetImageBySlugAndType(imageUuid, "event")
 }
-func (s *ImageService) GetArtistsImage(id string) (string, string, error) {
-
-	return s.ir.GetImageBySlugDimensionAndType(id, "artist")
+func (s *ImageService) GetArtistsImage(slug string) (string, string, error) {
+	imageUuid, err := s.ir.GetImageUuidBySlugAndType(slug, "artist")
+	if err != nil {
+		return "", "", err
+	}
+	return s.ir.GetImageBySlugAndType(imageUuid, "artist")
 }
-func (s *ImageService) GetReleaseImage(id string) (string, string, error) {
-
-	return s.ir.GetImageBySlugDimensionAndType(id, "release")
+func (s *ImageService) GetReleaseImage(slug string) (string, string, error) {
+	imageUuid, err := s.ir.GetImageUuidBySlugAndType(slug, "release")
+	if err != nil {
+		return "", "", err
+	}
+	return s.ir.GetImageBySlugAndType(imageUuid, "release")
 }

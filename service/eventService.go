@@ -140,11 +140,12 @@ func (s *EventService) AdminUpdateEvent(event model.UpdateEventDto) error {
 	}
 
 	eventEntity := model.Event{
-		Id:       event.Id,
-		Name:     event.Name,
-		Location: event.Location,
-		Date:     event.Date,
-		Artists:  artists,
+		Id:        event.Id,
+		Name:      event.Name,
+		Location:  event.Location,
+		Date:      event.Date,
+		Artists:   artists,
+		ImageUuid: event.ImageUuid,
 	}
 
 	return s.eventRepo.AdminUpdateEvent(eventEntity)
