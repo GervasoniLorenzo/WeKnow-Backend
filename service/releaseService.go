@@ -5,6 +5,7 @@ import (
 	"strings"
 	"weKnow/model"
 	"weKnow/repository"
+	"weKnow/utils"
 )
 
 type ReleaseServiceInterface interface {
@@ -16,12 +17,14 @@ type ReleaseServiceInterface interface {
 type ReleaseService struct {
 	releaseRepo repository.ReleaseRepositoryInterface
 	artistRepo  repository.ArtistRepositoryInterface
+	u           utils.UtilsInterface
 }
 
 func NewReleaseService(rr repository.ReleaseRepositoryInterface, ar repository.ArtistRepositoryInterface) ReleaseServiceInterface {
 	return &ReleaseService{
 		releaseRepo: rr,
 		artistRepo:  ar,
+		u:           utils.NewUtils(),
 	}
 }
 
@@ -35,6 +38,22 @@ func (s *ReleaseService) GetReleases() ([]model.Release, error) {
 
 func (s *ReleaseService) AddRelease(releaseDto model.ReleaseDto) error {
 	artists := []model.Artist{}
+	slug := s.u.GenerateSlug(releaseDto.Title)
+	exists, err := s.releaseRepo.CheckReleaseSlugExists(slug)
+	if err != nil {
+		return err
+	}
+	count := 0
+	for exists {
+		count++
+		exists, err = s.releaseRepo.CheckReleaseSlugExists(fmt.Sprintf("%s-%v", slug, count))
+		if err != nil {
+			return err
+		}
+		if exists {
+			slug = fmt.Sprintf("%s-%d", slug, count)
+		}
+	}
 	for _, artistId := range releaseDto.ArtistIds {
 		artist, err := s.artistRepo.GetArtistDetailsById(artistId)
 		if err != nil {
@@ -52,6 +71,7 @@ func (s *ReleaseService) AddRelease(releaseDto model.ReleaseDto) error {
 }
 
 func (s *ReleaseService) UpdateRelease(releaseDto model.ReleaseDto, id int) error {
+
 	if len(releaseDto.ArtistIds) == 0 {
 		return fmt.Errorf("artistsIds is required and cannot be empty")
 	}

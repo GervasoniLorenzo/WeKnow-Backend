@@ -10,6 +10,7 @@ type ReleaseRepositoryInterface interface {
 	AddRelease(model.Release) error
 	UpdateRelease(release model.Release) error
 	DeleteRelease(id int) error
+	CheckReleaseSlugExists(slug string) (bool, error)
 }
 type ReleaseRepository struct {
 	dataBase db.DatabaseInterface
@@ -33,4 +34,8 @@ func (r *ReleaseRepository) UpdateRelease(release model.Release) error {
 }
 func (r *ReleaseRepository) DeleteRelease(id int) error {
 	return r.dataBase.DeleteRelease(id)
+}
+
+func (r *ReleaseRepository) CheckReleaseSlugExists(slug string) (bool, error) {
+	return r.dataBase.SlugAlreadyExist(slug, "release")
 }

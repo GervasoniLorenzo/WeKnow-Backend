@@ -112,7 +112,27 @@ func (db *KnownDatabase) DeleteEvent(id int) error {
 }
 
 func (db *KnownDatabase) DeleteRelease(id int) error {
-	return db.Delete(&model.Release{}, id).Error
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	if err := tx.Model(&model.Release{ID: id}).Association("Artists").Clear(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Where("release_id = ?", id).Delete(&model.ReleaseLink{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Delete(&model.Release{}, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 func (db *KnownDatabase) GetArtistDetailsById(id int) (model.Artist, error) {
