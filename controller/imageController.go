@@ -15,9 +15,10 @@ type ImageController struct {
 type ImageControllerInterface interface {
 	UploadEventImage(w http.ResponseWriter, r *http.Request)
 	GetEventImage(w http.ResponseWriter, r *http.Request)
-	// GetArtistImage(w http.ResponseWriter, r *http.Request)
 	GetReleaseImage(w http.ResponseWriter, r *http.Request)
 	UploadReleaseImage(w http.ResponseWriter, r *http.Request)
+	GetArtistImage(w http.ResponseWriter, r *http.Request)
+	UploadArtistImage(w http.ResponseWriter, r *http.Request)
 }
 
 func NewImageController(service service.ImageServiceInterface) ImageControllerInterface {
@@ -58,7 +59,7 @@ func (ctrl *ImageController) UploadEventImage(w http.ResponseWriter, r *http.Req
 }
 
 func (ctrl *ImageController) GetEventImage(w http.ResponseWriter, r *http.Request) {
-	slug := r.URL.Path[len("/event/image/"):]
+	slug := mux.Vars(r)["slug"]
 	if slug == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -76,17 +77,19 @@ func (ctrl *ImageController) GetEventImage(w http.ResponseWriter, r *http.Reques
 }
 
 func (ctrl *ImageController) GetArtistImage(w http.ResponseWriter, r *http.Request) {
-	slug := r.URL.Query().Get("slug")
-	artistType := r.URL.Query().Get("type")
-	if slug == "" || artistType == "" {
+	slug := mux.Vars(r)["slug"]
+	if slug == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	img, mimetype, err := ctrl.srv.GetArtistsImage(slug)
+
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
+
 	w.Header().Set("Content-Type", mimetype)
 	http.ServeFile(w, r, img)
 }
@@ -118,6 +121,37 @@ func (ctrl *ImageController) UploadReleaseImage(w http.ResponseWriter, r *http.R
 	}
 	defer file.Close()
 	res, err := ctrl.srv.CreateImage(handler, file, "release")
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Errore nel salvataggio dell'immagine: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.WriteHeader(http.StatusOK)
+
+	jsonData, err := json.Marshal(map[string]string{"uuid": res})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
+func (ctrl *ImageController) UploadArtistImage(w http.ResponseWriter, r *http.Request) {
+
+	file, handler, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Errore nel leggere il file: %v", err), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	res, err := ctrl.srv.CreateImage(handler, file, "artist")
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Errore nel salvataggio dell'immagine: %v", err), http.StatusInternalServerError)

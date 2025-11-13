@@ -16,22 +16,21 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	r.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	r.HandleFunc("/artist/image/{slug}", ctrl.GetArtistImage).Methods("GET")
 	r.HandleFunc("/artist/{slug}/events", ctrl.GetArtistEvents).Methods("GET")
-	// r.HandleFunc("/artist/image", ctrl.UploadImage).Methods("POST")
 	r.HandleFunc("/artist", ctrl.CreateArtist).Methods("POST")
 	r.HandleFunc("/artist/{slug}", ctrl.GetArtistDetails).Methods("GET")
-
+	
 	// EVENTS
 	r.HandleFunc("/event/next", ctrl.GetNextEvent).Methods("GET")
 	r.HandleFunc("/event/upcoming", ctrl.GetUpcomingEvents).Methods("GET")
 	r.HandleFunc("/event/past", ctrl.GetPastEvents).Methods("GET")
 	r.HandleFunc("/event/mail/{id}", ctrl.SendEventEmail).Methods("POST")
 	r.HandleFunc("/event/image/{slug}", ctrl.GetEventImage).Methods("GET")
-
+	
 	// RELEASES
 	r.HandleFunc("/release/list", ctrl.GetReleases).Methods("GET")
 	r.HandleFunc("/release/image/{slug}", ctrl.GetReleaseImage).Methods("GET")
 	// r.HandleFunc("/release/{slug}/artists", ctrl.GetReleaseArtists).Methods("GET")
-
+	
 	// ADMIN
 	admin := r.PathPrefix("/admin").Subrouter()
 	// admin.Use(middleware.AppJWT(jwtSecret))
@@ -41,10 +40,11 @@ func SetupRouter(ctrl controller.KnownController) *mux.Router {
 	admin.HandleFunc("/event/{id}", ctrl.AdminUpdateEvent).Methods("PUT")
 	admin.HandleFunc("/event/{id}", ctrl.AdminDeleteEvent).Methods("DELETE")
 	admin.HandleFunc("/event/image", ctrl.UploadEventImage).Methods("POST")
-
+	
 	admin.HandleFunc("/artist/list", ctrl.GetArtists).Methods("GET")
 	admin.HandleFunc("/artist/{id}", ctrl.UpdateArtist).Methods("PUT")
 	admin.HandleFunc("/artist/{id}", ctrl.DeleteArtist).Methods("DELETE")
+	admin.HandleFunc("/artist/image", ctrl.UploadArtistImage).Methods("POST")
 	// RELEASES
 	admin.HandleFunc("/release/list", ctrl.GetReleases).Methods("GET")
 	admin.HandleFunc("/release/image", ctrl.UploadReleaseImage).Methods("POST")

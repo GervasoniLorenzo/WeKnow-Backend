@@ -10,7 +10,7 @@ type Release struct {
 	Date      *time.Time    `json:"date" gorm:"column:date;not null"`
 	Links     []ReleaseLink `json:"links" gorm:"foreignKey:ReleaseID;references:ID"`
 	Artists   []Artist      `json:"artists" gorm:"many2many:release_artist;"`
-	ImageUuid *string        `json:"imageUrl" gorm:"column:image_uuid;"`
+	ImageUuid *string       `json:"imageUrl" gorm:"column:image_uuid;"`
 }
 
 type ReleaseDto struct {

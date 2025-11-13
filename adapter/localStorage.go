@@ -10,21 +10,6 @@ import (
 
 func (a *KnownAdapter) ServeImage(path string) (string, string, error) {
 
-	// found := false
-	// for _, image := range imagePath {
-	// 	i, err := os.Stat(image)
-	// 	fmt.Println(i)
-	// 	if os.IsExist(err) {
-	// 		found = true
-	// 		path = image
-	// 		break
-	// 	}
-	// }
-
-	// if !found {
-	// 	fmt.Println("File immagine non trovato")
-	// 	return "", "", fmt.Errorf("file immagine non trovato")
-	// }
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println("Errore nell'apertura del file immagine")

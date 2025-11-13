@@ -42,8 +42,9 @@ func (s *ArtistService) GetArtists() []model.ArtistBasicInfo {
 	for _, artist := range s.repo.GetArtists() {
 		artist := model.ArtistBasicInfo{
 			Id:   artist.Id,
-			Name: artist.Name,
 			Slug: artist.Slug,
+			Name: artist.Name,
+			Bio:  artist.Bio,
 		}
 		list = append(list, artist)
 	}

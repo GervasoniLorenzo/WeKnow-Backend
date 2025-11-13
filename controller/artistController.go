@@ -17,7 +17,6 @@ type ArtistController struct {
 type ArtistControllerInterface interface {
 	GetArtists(w http.ResponseWriter, r *http.Request)
 	CreateArtist(w http.ResponseWriter, r *http.Request)
-	GetArtistImage(w http.ResponseWriter, r *http.Request)
 	GetArtistDetails(w http.ResponseWriter, r *http.Request)
 	UpdateArtist(w http.ResponseWriter, r *http.Request)
 	DeleteArtist(w http.ResponseWriter, r *http.Request)
@@ -61,23 +60,6 @@ func (ctrl *ArtistController) CreateArtist(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-func (ctrl *ArtistController) GetArtistImage(w http.ResponseWriter, r *http.Request) {
-	slug := r.URL.Path[len("/artist/image/"):]
-	if slug == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	img, mimetype, err := ctrl.service.GetArtistImage(slug)
-
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", mimetype)
-	http.ServeFile(w, r, img)
 }
 
 func (ctrl *ArtistController) GetArtistDetails(w http.ResponseWriter, r *http.Request) {

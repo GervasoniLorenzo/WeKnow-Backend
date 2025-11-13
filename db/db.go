@@ -331,7 +331,7 @@ func (db *KnownDatabase) UpdateArtist(artist model.Artist) error {
 		Updates(map[string]any{
 			"name":       artist.Name,
 			"bio":        artist.Bio,
-			"image_uuid": artist.ImageUuid,
+			"image_uuid": &artist.ImageUuid,
 		}).Error
 }
 
