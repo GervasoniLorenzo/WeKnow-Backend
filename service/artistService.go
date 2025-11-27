@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"weKnow/config"
 	"weKnow/model"
 	"weKnow/repository"
 	"weKnow/utils"
@@ -12,18 +13,20 @@ type ArtistServiceInterface interface {
 	AddArtist(artist model.ArtistDto) error
 	UpdateArtist(artist model.ArtistDto, id int) error
 	GetArtistImage(slug string) (string, string, error)
-	GetArtistDetails(artistSlug string) (model.Artist, error)
+	GetArtistDetails(artistSlug string) (model.ArtistResponseDto, error)
 	DeleteArtist(id int) error
 }
 
 type ArtistService struct {
 	repo repository.ArtistRepositoryInterface
 	u    utils.UtilsInterface
+	cfg  config.KnownConfig
 }
 
-func NewArtistService(repo repository.ArtistRepositoryInterface) ArtistServiceInterface {
+func NewArtistService(repo repository.ArtistRepositoryInterface, cfg config.KnownConfig) ArtistServiceInterface {
 	return &ArtistService{
 		repo: repo,
+		cfg:  cfg,
 	}
 }
 
@@ -82,8 +85,48 @@ func (s *ArtistService) GetArtistImage(slug string) (string, string, error) {
 	return s.repo.GetArtistImage(uuid)
 }
 
-func (s *ArtistService) GetArtistDetails(artistSlug string) (model.Artist, error) {
-	return s.repo.GetArtistDetailsBySlug(artistSlug)
+func (s *ArtistService) GetArtistDetails(artistSlug string) (model.ArtistResponseDto, error) {
+	artist, err := s.repo.GetArtistDetailsBySlug(artistSlug)
+	if err != nil {
+		return model.ArtistResponseDto{}, err
+	}
+	image := ""
+	if artist.ImageUuid != nil {
+		image = fmt.Sprintf("%s/artist/image/%s", s.cfg.App.Host, artist.Slug)
+	}
+	releases := []model.ReleaseResponseDto{}
+	for _, release := range artist.Releases {
+		releaseDto := model.ReleaseResponseDto{
+			Title: release.Title,
+			Date:  release.Date,
+			Links: release.Links,
+			Label: release.Label,
+		}
+		releases = append(releases, releaseDto)
+	}
+	events := []model.EventBasicDto{}
+	for _, event := range artist.Events {
+		day := event.Date.Day()
+		month := model.MONTHS[int(event.Date.Month())-1]
+		year := event.Date.Year()
+		eventDto := model.EventBasicDto{
+			Id:   event.Id,
+			Name: event.Name,
+			Date: fmt.Sprintf("%d %s %d", day, month, year),
+			Slug: event.Slug,
+		}
+		events = append(events, eventDto)
+	}
+
+	return model.ArtistResponseDto{
+		Id:       artist.Id,
+		Slug:     artist.Slug,
+		Name:     artist.Name,
+		Bio:      artist.Bio,
+		ImageUrl: image,
+		Releases: releases,
+		Events:   events,
+	}, nil
 }
 
 func (s *ArtistService) UpdateArtist(artistDto model.ArtistDto, id int) error {

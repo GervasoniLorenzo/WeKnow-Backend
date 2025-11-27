@@ -113,11 +113,10 @@ func (s *EventService) formatEvent(e model.Event, view string) model.EventRespon
 	day := e.Date.Day()
 	month := model.MONTHS[int(e.Date.Month())-1]
 	year := e.Date.Year()
-	size := "flyer"
-	if view == "mobile" {
-		size = "small"
+	image := ""
+	if e.ImageUuid != nil {
+		image = fmt.Sprintf("%s/event/image/%s", s.cfg.App.Host, e.Slug)
 	}
-	image := fmt.Sprintf("%s/event/image/%s?size=%s", s.cfg.App.Host, e.Slug, size)
 	return model.EventResponseDto{
 		Id:       e.Id,
 		Name:     e.Name,

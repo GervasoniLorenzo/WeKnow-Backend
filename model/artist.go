@@ -16,6 +16,16 @@ type ArtistDto struct {
 	ImageUuid string `json:"imageUuid"`
 }
 
+type ArtistResponseDto struct {
+	Id       int                  `json:"id"`
+	Slug     string               `json:"slug"`
+	Name     string               `json:"name"`
+	Bio      string               `json:"bio"`
+	ImageUrl string               `json:"imageUrl"`
+	Releases []ReleaseResponseDto `json:"releases"`
+	Events   []EventBasicDto      `json:"events"`
+}
+
 func (Artist) TableName() string {
 	return "artist"
 }

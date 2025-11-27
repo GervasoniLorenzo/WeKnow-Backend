@@ -41,6 +41,13 @@ type EventDto struct {
 	ImageUuid *string    `json:"imageUuid,omitempty"`
 }
 
+type EventBasicDto struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+	Date string `json:"date"`
+	Slug string `json:"slug"`
+}
+
 type UpdateEventDto struct {
 	Id int `json:"id"`
 	EventDto

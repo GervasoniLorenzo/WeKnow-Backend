@@ -44,6 +44,7 @@ type ReleaseResponseDto struct {
 	Date    *time.Time    `json:"date"`
 	Links   []ReleaseLink `json:"links"`
 	Artists string        `json:"artists"`
+	Label   string        `json:"label"`
 }
 
 func FormatRelease(release Release) ReleaseResponseDto {
