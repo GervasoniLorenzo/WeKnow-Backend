@@ -96,26 +96,32 @@ func (s *ArtistService) GetArtistDetails(artistSlug string) (model.ArtistRespons
 	}
 	releases := []model.ReleaseResponseDto{}
 	for _, release := range artist.Releases {
+		rImage := ""
+		if release.ImageUuid != nil {
+			rImage = fmt.Sprintf("%s/release/image/%s", s.cfg.App.Host, release.Slug)
+		}
+
+		rArtists := []string{}
+		for _, a := range release.Artists {
+			rArtists = append(rArtists, a.Name)
+		}
+
 		releaseDto := model.ReleaseResponseDto{
-			Title: release.Title,
-			Date:  release.Date,
-			Links: release.Links,
-			Label: release.Label,
+			Title:    release.Title,
+			Slug:     release.Slug,
+			Artists:  rArtists,
+			Date:     release.Date,
+			Links:    release.Links,
+			Label:    release.Label,
+			ImageUrl: rImage,
 		}
 		releases = append(releases, releaseDto)
 	}
-	events := []model.EventBasicDto{}
+	setUrls := []string{}
 	for _, event := range artist.Events {
-		day := event.Date.Day()
-		month := model.MONTHS[int(event.Date.Month())-1]
-		year := event.Date.Year()
-		eventDto := model.EventBasicDto{
-			Id:   event.Id,
-			Name: event.Name,
-			Date: fmt.Sprintf("%d %s %d", day, month, year),
-			Slug: event.Slug,
+		if event.SetUrl != nil {
+			setUrls = append(setUrls, *event.SetUrl)
 		}
-		events = append(events, eventDto)
 	}
 
 	return model.ArtistResponseDto{
@@ -125,7 +131,7 @@ func (s *ArtistService) GetArtistDetails(artistSlug string) (model.ArtistRespons
 		Bio:      artist.Bio,
 		ImageUrl: image,
 		Releases: releases,
-		Events:   events,
+		SetUrls:  setUrls,
 	}, nil
 }
 

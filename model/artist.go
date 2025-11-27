@@ -23,7 +23,7 @@ type ArtistResponseDto struct {
 	Bio      string               `json:"bio"`
 	ImageUrl string               `json:"imageUrl"`
 	Releases []ReleaseResponseDto `json:"releases"`
-	Events   []EventBasicDto      `json:"events"`
+	SetUrls  []string             `json:"set_urls"`
 }
 
 func (Artist) TableName() string {

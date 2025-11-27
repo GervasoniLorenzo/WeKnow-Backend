@@ -17,6 +17,7 @@ type Event struct {
 	Date      *time.Time `gorm:"column:date" json:"date"`
 	Artists   []Artist   `gorm:"many2many:event_artist" json:"artists"`
 	ImageUuid *string    `gorm:"column:image_uuid" json:"imageUuid"`
+	SetUrl    *string    `gorm:"column:set_url" json:"setUrl,omitempty"`
 }
 
 func (e *Event) TableName() string {

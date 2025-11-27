@@ -38,22 +38,20 @@ func (ReleaseLink) TableName() string {
 }
 
 type ReleaseResponseDto struct {
-	ID      int           `json:"id"`
-	Slug    string        `json:"slug"`
-	Title   string        `json:"title"`
-	Date    *time.Time    `json:"date"`
-	Links   []ReleaseLink `json:"links"`
-	Artists string        `json:"artists"`
-	Label   string        `json:"label"`
+	ID       int           `json:"id"`
+	Slug     string        `json:"slug"`
+	Title    string        `json:"title"`
+	Date     *time.Time    `json:"date"`
+	Links    []ReleaseLink `json:"links"`
+	Artists  []string      `json:"artists"`
+	Label    string        `json:"label"`
+	ImageUrl string        `json:"imageUrl"`
 }
 
 func FormatRelease(release Release) ReleaseResponseDto {
-	artists := ""
+	artists := []string{}
 	for _, artist := range release.Artists {
-		artists += artist.Name + ", "
-	}
-	if len(artists) > 0 {
-		artists = artists[:len(artists)-2] // Remove trailing comma and space
+		artists = append(artists, artist.Name)
 	}
 
 	return ReleaseResponseDto{

@@ -14,7 +14,7 @@ type EventServiceInterface interface {
 	GetUpcomingEvents() ([]model.EventResponseDto, error)
 	SendEventEmail(id int) error
 	GetArtistEvents(slug string) ([]model.Event, error)
-	AdminGetEventList() ([]model.Event, error)
+	AdminGetEventList(eventType string) ([]model.Event, error)
 	AdminDeleteEvent(id int) error
 	AdminUpdateEvent(event model.UpdateEventDto) error
 	AdminCreateEvent(event model.EventDto) error
@@ -97,8 +97,9 @@ func (s *EventService) GetArtistEvents(slug string) ([]model.Event, error) {
 	return s.eventRepo.GetArtistEvents(slug)
 }
 
-func (s *EventService) AdminGetEventList() ([]model.Event, error) {
-	return s.eventRepo.AdminGetEventList()
+func (s *EventService) AdminGetEventList(eventType string) ([]model.Event, error) {
+
+	return s.eventRepo.AdminGetEventList(eventType)
 }
 
 func (s *EventService) formatEvents(events []model.Event) []model.EventResponseDto {

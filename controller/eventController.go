@@ -146,8 +146,8 @@ func (ctrl *EventController) GetArtistEvents(w http.ResponseWriter, r *http.Requ
 }
 
 func (ctrl *EventController) AdminGetEventList(w http.ResponseWriter, r *http.Request) {
-	events, err := ctrl.srv.AdminGetEventList()
-
+	eventType := r.URL.Query().Get("type")
+	events, err := ctrl.srv.AdminGetEventList(eventType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

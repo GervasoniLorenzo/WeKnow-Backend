@@ -19,7 +19,8 @@ type KnownDatabase struct {
 type DatabaseInterface interface {
 	AddArtist(artist model.Artist) error
 	AddEvent(event model.Event) error
-	AdminGetEventList() ([]model.Event, error)
+	AdminGetUpcomingEventList() ([]model.Event, error)
+	AdminGetPastEventList() ([]model.Event, error)
 	CreateRelease(release model.Release) error
 	DeleteArtist(id int) error
 	DeleteEvent(id int) error
@@ -91,7 +92,17 @@ func (db *KnownDatabase) AddEvent(event model.Event) error {
 	return nil
 }
 
-func (db *KnownDatabase) AdminGetEventList() ([]model.Event, error) {
+func (db *KnownDatabase) AdminGetUpcomingEventList() ([]model.Event, error) {
+	var events []model.Event
+	return events, db.
+		Preload("Artists").
+		Where("date < now()").
+		Order("date ASC").
+		Find(&events).
+		Error
+}
+
+func (db *KnownDatabase) AdminGetPastEventList() ([]model.Event, error) {
 	var events []model.Event
 	return events, db.
 		Preload("Artists").

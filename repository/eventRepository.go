@@ -19,7 +19,7 @@ type EventRepositoryInterface interface {
 	GetArtistEvents(slug string) ([]model.Event, error)
 	// ADMIN
 	AdminAddEvent(event model.Event) error
-	AdminGetEventList() ([]model.Event, error)
+	AdminGetEventList(eventType string) ([]model.Event, error)
 	AdminDeleteEvent(id int) error
 	AdminUpdateEvent(event model.Event) error
 	CheckEventSlugExists(slug string) (bool, error)
@@ -51,8 +51,13 @@ func (r *EventRepository) GetArtistEvents(slug string) ([]model.Event, error) {
 func (r *EventRepository) AddEvent(event model.Event) error {
 	return r.dataBase.AddEvent(event)
 }
-func (r *EventRepository) AdminGetEventList() ([]model.Event, error) {
-	return r.dataBase.AdminGetEventList()
+func (r *EventRepository) AdminGetEventList(eventType string) ([]model.Event, error) {
+	if eventType == "upcoming" {
+		return r.dataBase.AdminGetUpcomingEventList()
+	}
+	return r.dataBase.AdminGetPastEventList()
+		
+
 }
 
 func (r *EventRepository) AdminAddEvent(event model.Event) error {
